@@ -1,0 +1,62 @@
+﻿mrgid_eez,iso3,country_name,country_sovereign,development_status,country_EEZ,status
+8414,ATG,Antigua and Barbuda,Antigua and Barbuda,Developing (SID),Antigua and Barbuda,sovereign nation
+8404,BHS,Bahamas,Bahamas,Developing (SID),Bahamas,sovereign nation
+8358,BHR,Bahrain,Bahrain,Developing (SID),Bahrain,sovereign nation
+8418,BRB,Barbados,Barbados,Developing (SID),Barbados,sovereign nation
+8457,BLZ,Belize,Belize,Developing (SID),Belize,sovereign nation
+8362,CPV,Cape Verde,Cape Verde,Developing (SID),Cape Verde,sovereign nation
+8334,COM,Comoros,Comoros,LDC (SID),Comores,sovereign nation
+8406,CUB,Cuba,Cuba,Developing (SID),Cuba,sovereign nation
+8417,DMA,Dominica,Dominica,Developing (SID),Dominica,sovereign nation
+8409,DOM,Dominican Republic,Dominican Republic,Developing (SID),Dominican Republic,sovereign nation
+8325,FJI,Fiji,Fiji,Developing (SID),Fiji,sovereign nation
+8440,PYF,French Polynesia,France,Developing (SID),French Polynesia,overseas semi-autonomous territory
+33177,GLP,Guadeloupe,France,Developing (SID),Guadeloupe,overseas dependent territory
+33178,MTQ,Martinique,France,Developing (SID),Martinique,overseas dependent territory
+8312,NCL,New Caledonia,France,Developing (SID),New Caledonia,overseas dependent territory
+8419,GRD,Grenada,Grenada,Developing (SID),Grenada,sovereign nation
+8471,GNB,Guinea-Bissau,Guinea-Bissau,LDC (SID),Guinea-Bissau,sovereign nation
+8460,GUY,Guyana,Guyana,Developing (SID),Guyana,sovereign nation
+8408,HTI,Haiti,Haiti,LDC (SID),Haiti,sovereign nation
+8459,JAM,Jamaica,Jamaica,Developing (SID),Jamaica,sovereign nation
+8441,KIR,Kiribati (Line Islands),Kiribati,LDC (SID),Line Group,sovereign nation
+8488,KIR,Kiribati (Gilbert Islands),Kiribati,LDC (SID),Gilbert Islands,sovereign nation
+8450,KIR,Kiribati (Phoenix Islands),Kiribati,LDC (SID),Phoenix Group,sovereign nation
+8345,MDV,Maldives,Maldives,Developing (SID),Maldives,sovereign nation
+8318,MHL,Marshall Islands,Marshall Islands,Developing (SID),Marshall Islands,sovereign nation
+8343,MUS,Mauritius,Mauritius,Developing (SID),Republic of Mauritius,sovereign nation
+8316,FSM,Micronesia,Micronesia,Developing (SID),Micronesia,sovereign nation
+8317,NRU,Nauru,Nauru,Developing (SID),Nauru,sovereign nation
+26526,ABW,Aruba,Netherlands,Developing (SID),Aruba,self-governing constituent country
+26517,CUW,Curacao,Netherlands,Developing (SID),Cura?ao,self-governing constituent country
+21803,SXM,Sint Maarten,Netherlands,Developing (SID),Sint-Maarten,self-governing constituent country
+8446,COK,Cook Islands,New Zealand,Developing (SID),Cook Islands,self-governing constituent country
+8447,NIU,Niue,New Zealand,Developing (SID),Niue,self-governing constituent country
+8315,PLW,Palau,Palau,Developing (SID),Palau,sovereign nation
+8324,PNG,Papua New Guinea,Papua New Guinea,Developing (SID),Papua New Guinea,sovereign nation
+8413,KNA,Saint Kitts and Nevis,Saint Kitts and Nevis,Developing (SID),Saint Kitts and Nevis,sovereign nation
+8416,LCA,Saint Lucia,Saint Lucia,Developing (SID),Saint Lucia,sovereign nation
+8421,VCT,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,Developing (SID),Saint Vincent and the Grenadines,sovereign nation
+8445,WSM,Samoa,Samoa,Developing (SID),Samoa,sovereign nation
+8397,STP,Sao Tome and Principe,Sao Tome and Principe,LDC (SID),Sao Tome and Principe,sovereign nation
+8337,SYC,Seychelles,Seychelles,Developing (SID),Seychelles,sovereign nation
+8485,SGP,Singapore,Singapore,Developing (SID),Singapore,sovereign nation
+8314,SLB,Solomon Islands,Solomon Islands,LDC (SID),Solomon Islands,sovereign nation
+8461,SUR,Suriname,Suriname,Developing (SID),Suriname,sovereign nation
+8758,TLS,Timor-Leste,Timor-Leste,LDC (SID),East Timor,sovereign nation
+21791,TLS,Oecusse,Timor-Leste,LDC (SID),Oecusse,special municipality
+8448,TON,Tonga,Tonga,Developing (SID),Tonga,sovereign nation
+8420,TTO,Trinidad and Tobago,Trinidad and Tobago,Developing (SID),Trinidad and Tobago,sovereign nation
+8326,TUV,Tuvalu,Tuvalu,LDC (SID),Tuvalu,sovereign nation
+8412,AIA,Anguilla,United Kingdom,Developing (SID),Anguilla,overseas semi-autonomous territory
+8411,VGB,British Virgin Islands,United Kingdom,Developing (SID),British Virgin Islands,overseas semi-autonomous territory
+8405,TCA,Turks and Caicos Islands,United Kingdom,Developing (SID),Turks and Caicos Islands,overseas semi-autonomous territory
+8415,MSR,Montserrat,United Kingdom,Developing (SID),Montserrat,overseas semi-autonomous territory
+8402,BMU,Bermuda,United Kingdom,Developing (SID),Bermuda,overseas semi-autonomous territory
+8407,CYM,Cayman Islands,United Kingdom,Developing (SID),Cayman Islands,overseas semi-autonomous territory
+8444,ASM,American Samoa,United States,Developing (SID),American Samoa,overseas dependent territory
+48957,GUM,Guam,United States,Developing (SID),Guam,overseas dependent territory
+48980,MNP,Northern Mariana Islands,United States,Developing (SID),Northern Mariana Islands,overseas dependent territory
+33179,PRI,Puerto Rico,United States,Developing (SID),Puerto Rico,overseas dependent territory
+33180,VIR,US Virgin Islands,United States,Developing (SID),United States Virgin Islands,overseas dependent territory
+8313,VUT,Vanuatu,Vanuatu,LDC (SID),Vanuatu,sovereign nation
