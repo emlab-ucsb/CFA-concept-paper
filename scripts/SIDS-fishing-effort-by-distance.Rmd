@@ -20,10 +20,9 @@ ucsb_project <-  "ucsb-gfw"
 SID_country_list <- read_csv(here::here("data", "SID_country_list.csv"))
 SID_codes <- SID_country_list$mrgid_eez
 
-SID_eez_boundaries <- st_read(here::here("data", "World_EEZ_v10_20180221/"), layer="eez_boundaries_v10", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+eez_boundaries <- st_read(here::here("data", "World_EEZ_v10_20180221/"), layer="eez_boundaries_v10", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
     filter(Line_type == "200 NM") %>%
-  dplyr::select(mrgid_eez = MRGID_EEZ1, territory = Territory1, sovereign = Sovereign1) %>%
-  filter(mrgid_eez %in% SID_codes)
+  dplyr::select(mrgid_eez = MRGID_EEZ1, territory = Territory1, sovereign = Sovereign1) 
 
 # Make land
 world_land <-
@@ -32,38 +31,45 @@ world_land <-
 ```
 
 ```{r}
-# Pull out data for SIDs
-SID_codes_string <- paste(SID_codes, collapse = ', ')
-
-sql <- paste0("
+# Aggregate and download our full SIDs dataset 
+sql <- "
 SELECT
-*
+ *
 FROM
-  `ucsb-gfw.ocean_halos.full_dataset`
-WHERE 
-  mrgid_eez IN (", SID_codes_string, ")
-  AND year = 2017")
+  `ucsb-gfw.ocean_halos.final_eez_dataset_SID`
+"
 
 final_eez_dataset <- bq_project_query(ucsb_project, sql) %>% 
   bq_table_download(max_results = Inf)
-write_csv(final_eez_dataset, path = here::here("data", "final_SID_eez_dataset_2017.csv"))
+write_csv(final_eez_dataset, path = here::here("data", "final_eez_dataset_SID_2016_2018.csv"))
 
-# Plot
-fishing_line <- final_eez_dataset %>%
-  filter(year == 2017) %>%
-  #filter(closest_eez_boundary_sovereign == "AUS") %>%
+dataset_filter_2018 <- final_eez_dataset %>%
+  filter(year == 2018,
+         inside_eez == FALSE) %>%
   mutate(lat_bin = floor(lat_bin / 0.25) * 0.25 + 0.125,
          lon_bin = floor(lon_bin / 0.25) * 0.25 + 0.125,
          distance_to_eez_boundary_km = distance_to_eez_boundary_meters / 1000) %>%
-  group_by(foreign_flag,lat_bin,lon_bin) %>%
+  group_by(mrgid_eez, lat_bin, lon_bin) %>%
   summarize(fishing_hours = sum(fishing_hours),
-            distance_to_eez_boundary_km = mean(distance_to_eez_boundary_km)) %>%
-  ungroup() %>%
-  mutate(foreign_flag = ifelse(foreign_flag,"Foreign fleet","Domestic fleet")) %>%
+            distance_to_eez_boundary_km = mean(distance_to_eez_boundary_km))
+
+fancy_scientific <- function(l) {
+     # turn in to character string in scientific notation
+     l <- format(signif(l,3), scientific = TRUE)
+     # quote the part before the exponent to keep all the digits
+     l <- gsub("^(.*)e", "'\\1'e", l)
+     # turn the 'e+' into plotmath format
+     l <- gsub("e", "%*%10^", l)
+     # return this as an expression
+     parse(text=l)
+}
+
+# Plot
+fishing_line_plot <- dataset_filter_2018 %>%
   ggplot()+
   geom_sf(data=world_land, color = NA, fill="grey30") +
-    geom_tile(aes(x = lon_bin,y=lat_bin,fill = fishing_hours)) +
-    geom_sf(data=eez_boundary,color="grey80",size=0.1) +
+  geom_tile(aes(x = lon_bin, y=lat_bin, fill = fishing_hours)) +
+  geom_sf(data=eez_boundaries, color="grey80", size=0.1, aes(group = mrgid_eez)) +
   scale_fill_viridis_c(trans="log",name="Fishing hours",labels = fancy_scientific,breaks = c(1e2,1e3,1e4)) +
   xlab("") +
   ylab("") +
@@ -84,11 +90,26 @@ fishing_line <- final_eez_dataset %>%
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),
         plot.margin=grid::unit(c(0,0,0,0), "mm")) +
-  labs(title = "2017 fishing effort along EEZ / high seas boundaries") +
+labs(title = "2017 fishing effort along EEZ / high seas boundaries") +
  guides(fill=guide_legend(
                  keywidth=0.25,
                  keyheight=0.25,
                  default.unit="inch")) +
+  ylim(c(-55,90))
 
+```
+
+```{r}
+
+test_data <- transform(dataset_filter_2018, bin = cut(distance_to_eez_boundary_km, 100)) %>%
+  group_by(mrgid_eez, bin) %>%
+  summarize(tot_fishing_hours = sum(fishing_hours),
+            mean_fishing_hours = mean(fishing_hours))
+
+test_plot <- dataset_filter_2018 %>%
+  ggplot()+
+  aes(distance_to_eez_boundary_km, fishing_hours)+
+  stat_summary_bin(fun.y = "sum", geom="bar", bins= 20) %>%
+  facet_wrap(~mrgid_eez)
 ```
 
