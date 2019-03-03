@@ -17,9 +17,6 @@ library(lwgeom)
 ucsb_project <-  "ucsb-gfw"
 
 # Read in EEZ data
-SID_country_list <- read_csv(here::here("data", "SID_country_list.csv"))
-SID_codes <- SID_country_list$mrgid_eez
-
 eez_boundaries <- st_read(here::here("data", "World_EEZ_v10_20180221/"), layer="eez_boundaries_v10", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
     filter(Line_type == "200 NM") %>%
   dplyr::select(mrgid_eez = MRGID_EEZ1, territory = Territory1, sovereign = Sovereign1) 
@@ -27,6 +24,12 @@ eez_boundaries <- st_read(here::here("data", "World_EEZ_v10_20180221/"), layer="
 # Make land
 world_land <-
   st_as_sf(rworldmap::countriesLow) ## data(countriesLow) is from the rworldmap package
+
+# Results directory for plots
+results_dir <- here::here("results", "effort-by-distance-SID")
+if (dir.exists(results_dir) == F) {
+  dir.create(results_dir, recursive = T)
+}
 
 ```
 
@@ -41,9 +44,63 @@ FROM
 
 final_eez_dataset <- bq_project_query(ucsb_project, sql) %>% 
   bq_table_download(max_results = Inf)
-write_csv(final_eez_dataset, path = here::here("data", "final_eez_dataset_SID_2016_2018.csv"))
 
-dataset_filter_2018 <- final_eez_dataset %>%
+# write_csv(final_eez_dataset, path = here::here("data", "final_eez_dataset_SID_2016_2018.csv"))
+
+```
+
+```{r}
+# Make analysis plots for 2018
+dataset_filter_2018_0.1deg <- final_eez_dataset %>%
+  filter(year == 2018,
+         inside_eez == FALSE) %>%
+  mutate(lat_bin = floor(lat_bin / 0.1) * 0.1 + 0.05,
+         lon_bin = floor(lon_bin / 0.1) * 0.1 + 0.05,
+         distance_to_eez_boundary_km = distance_to_eez_boundary_meters / 1000) %>%
+  group_by(mrgid_eez, lat_bin, lon_bin) %>%
+  summarize(fishing_hours = sum(fishing_hours),
+            distance_to_eez_boundary_km = mean(distance_to_eez_boundary_km))
+
+# 0.1 Degree Plot
+fishing_line_plot_0.1deg <- dataset_filter_2018_0.1deg %>%
+  ggplot()+
+  geom_sf(data=world_land, color = NA, fill="grey30") +
+  geom_tile(aes(x = lon_bin, y=lat_bin, fill = fishing_hours)) +
+  geom_sf(data=eez_boundaries, color="grey80", size=0.1, aes(group = mrgid_eez)) +
+  scale_fill_viridis_c(trans="log", name="Fishing hours", breaks = c(1, 10, 100, 1000)) +
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0))+
+  xlab("") +
+  ylab("") +
+  theme(plot.title = element_text(color="black",hjust=0,vjust=1, size=20),
+        panel.background = element_rect(fill ="black"),
+        plot.background = element_rect(fill = "black"),
+        legend.background=element_rect(fill="black"),
+        legend.text = element_text(color = "white", size = 16),
+        legend.title = element_text(color = "white", size = 16),
+        legend.title.align = 1,
+        legend.direction="horizontal",
+        legend.position = "bottom",
+        legend.justification = "center",
+        axis.text = element_text(color = "white", size = rel(1)),
+        panel.grid.major = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+ guides(fill=guide_legend(
+                 keywidth=0.25,
+                 keyheight=0.25,
+                 default.unit="inch")) +
+  ylim(c(-55,90))
+
+ggsave(paste0(results_dir, "/high_seas_effort_map_0.1deg.png"), dpi = 200, width = 7, height = 4)
+
+
+# 0.25 Degree Plot
+dataset_filter_2018_0.25deg <- final_eez_dataset %>%
   filter(year == 2018,
          inside_eez == FALSE) %>%
   mutate(lat_bin = floor(lat_bin / 0.25) * 0.25 + 0.125,
@@ -53,63 +110,60 @@ dataset_filter_2018 <- final_eez_dataset %>%
   summarize(fishing_hours = sum(fishing_hours),
             distance_to_eez_boundary_km = mean(distance_to_eez_boundary_km))
 
-fancy_scientific <- function(l) {
-     # turn in to character string in scientific notation
-     l <- format(signif(l,3), scientific = TRUE)
-     # quote the part before the exponent to keep all the digits
-     l <- gsub("^(.*)e", "'\\1'e", l)
-     # turn the 'e+' into plotmath format
-     l <- gsub("e", "%*%10^", l)
-     # return this as an expression
-     parse(text=l)
-}
-
-# Plot
-fishing_line_plot <- dataset_filter_2018 %>%
+fishing_line_plot_0.25deg <- dataset_filter_2018_0.25deg %>%
   ggplot()+
   geom_sf(data=world_land, color = NA, fill="grey30") +
   geom_tile(aes(x = lon_bin, y=lat_bin, fill = fishing_hours)) +
   geom_sf(data=eez_boundaries, color="grey80", size=0.1, aes(group = mrgid_eez)) +
-  scale_fill_viridis_c(trans="log",name="Fishing hours",labels = fancy_scientific,breaks = c(1e2,1e3,1e4)) +
+  scale_fill_viridis_c(trans="log", name="Fishing hours", breaks = c(1, 10, 100, 1000)) +
+  scale_x_continuous(expand = c(0,0))+
+  scale_y_continuous(expand = c(0,0))+
   xlab("") +
   ylab("") +
   theme(plot.title = element_text(color="black",hjust=0,vjust=1, size=20),
         panel.background = element_rect(fill ="black"),
-        legend.text = element_text(color = "black", size = 20),
-        legend.title = element_text(color = "black", size = 20),
+        plot.background = element_rect(fill = "black"),
+        legend.background=element_rect(fill="black"),
+        legend.text = element_text(color = "white", size = 16),
+        legend.title = element_text(color = "white", size = 16),
         legend.title.align = 1,
-        legend.background = element_rect(fill="white"),
         legend.direction="horizontal",
         legend.position = "bottom",
         legend.justification = "center",
-        axis.text = element_text(color = "black", size = rel(1)),
+        axis.text = element_text(color = "white", size = rel(1)),
         panel.grid.major = element_blank(),
+        axis.title.x = element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
         axis.title.y=element_blank(),
         axis.text.y=element_blank(),
-        axis.ticks.y=element_blank(),
-        plot.margin=grid::unit(c(0,0,0,0), "mm")) +
-labs(title = "2017 fishing effort along EEZ / high seas boundaries") +
+        axis.ticks.y=element_blank()) +
  guides(fill=guide_legend(
                  keywidth=0.25,
                  keyheight=0.25,
                  default.unit="inch")) +
   ylim(c(-55,90))
 
+ggsave(paste0(results_dir, "/high_seas_effort_map_0.25deg.png"), dpi = 200, width = 7, height = 4)
+
 ```
 
 ```{r}
+# Load in conversion sheet with country names
+country_list <- read_csv(here::here('data', "SID_country_list.csv"))
 
-test_data <- transform(dataset_filter_2018, bin = cut(distance_to_eez_boundary_km, 100)) %>%
-  group_by(mrgid_eez, bin) %>%
-  summarize(tot_fishing_hours = sum(fishing_hours),
-            mean_fishing_hours = mean(fishing_hours))
+country_data_2018 <- dataset_filter_2018 %>%
+  left_join(country_list, by = "mrgid_eez")
 
-test_plot <- dataset_filter_2018 %>%
+country_plot <- country_data_2018 %>%
   ggplot()+
-  aes(distance_to_eez_boundary_km, fishing_hours)+
-  stat_summary_bin(fun.y = "sum", geom="bar", bins= 20) %>%
-  facet_wrap(~mrgid_eez)
+  aes(distance_to_eez_boundary_km, fishing_hours, group = country_name, fill = country_sovereign)+
+  stat_summary_bin(fun.y = "sum", geom="bar", bins= 30) +
+  facet_wrap(~country_name, ncol = 4, scales = "free_y") +
+  theme_bw()+
+  labs(x = "Distance to EEZ boundary (km)", y = "Fishing hours")+
+  theme(legend.position = "none")
+
+ggsave(paste0(results_dir, "/country_effort_by_distance_bar_plot.png"), dpi = 200, width = 8, height = 9)
 ```
 
