@@ -52,8 +52,7 @@ final_eez_dataset <- bq_project_query(ucsb_project, sql) %>%
 ```{r}
 # Make analysis plots for 2018
 dataset_filter_2018_0.1deg <- final_eez_dataset %>%
-  filter(year == 2018,
-         inside_eez == FALSE) %>%
+  filter(year == 2018) %>%
   mutate(lat_bin = floor(lat_bin / 0.1) * 0.1 + 0.05,
          lon_bin = floor(lon_bin / 0.1) * 0.1 + 0.05,
          distance_to_eez_boundary_km = distance_to_eez_boundary_meters / 1000) %>%
@@ -101,8 +100,7 @@ ggsave(paste0(results_dir, "/high_seas_effort_map_0.1deg.png"), dpi = 200, width
 
 # 0.25 Degree Plot
 dataset_filter_2018_0.25deg <- final_eez_dataset %>%
-  filter(year == 2018,
-         inside_eez == FALSE) %>%
+  filter(year == 2018) %>%
   mutate(lat_bin = floor(lat_bin / 0.25) * 0.25 + 0.125,
          lon_bin = floor(lon_bin / 0.25) * 0.25 + 0.125,
          distance_to_eez_boundary_km = distance_to_eez_boundary_meters / 1000) %>%
@@ -152,18 +150,74 @@ ggsave(paste0(results_dir, "/high_seas_effort_map_0.25deg.png"), dpi = 200, widt
 # Load in conversion sheet with country names
 country_list <- read_csv(here::here('data', "SID_country_list.csv"))
 
+dataset_filter_10km <- final_eez_dataset %>%
+  filter(year == 2018) %>%
+  mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
+  group_by(mrgid_eez) %>%
+  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/10)*10) %>%
+  ungroup() %>%
+  group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
+  summarize(fishing_hours = sum(fishing_hours)) %>%
+  mutate(bin_size = "10 km")
+
+dataset_filter_20km <- final_eez_dataset %>%
+  filter(year == 2018) %>%
+  mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
+  group_by(mrgid_eez) %>%
+  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/bin_size_km)*bin_size_km) %>%
+  ungroup() %>%
+  group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
+  summarize(fishing_hours = sum(fishing_hours)) %>%
+  mutate(bin_size = "20 km")
+
+dataset_filter_40km <- final_eez_dataset %>%
+  filter(year == 2018) %>%
+  mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
+  group_by(mrgid_eez) %>%
+  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/40)*40) %>%
+  ungroup() %>%
+  group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
+  summarize(fishing_hours = sum(fishing_hours)) %>%
+  mutate(bin_size = "40 km")
+
+dataset_filter_100km <- final_eez_dataset %>%
+  filter(year == 2018) %>%
+  mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
+  group_by(mrgid_eez) %>%
+  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/100)*100) %>%
+  ungroup() %>%
+  group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
+  summarize(fishing_hours = sum(fishing_hours)) %>%
+  mutate(bin_size = "100 km")
+
+dataset_filter_2018 <- dataset_filter_10km %>%
+  bind_rows(dataset_filter_20km) %>%
+  bind_rows(dataset_filter_40km) %>%
+  bind_rows(dataset_filter_100km)
+  
 country_data_2018 <- dataset_filter_2018 %>%
   left_join(country_list, by = "mrgid_eez")
 
-country_plot <- country_data_2018 %>%
-  ggplot()+
-  aes(distance_to_eez_boundary_km, fishing_hours, group = country_name, fill = country_sovereign)+
-  stat_summary_bin(fun.y = "sum", geom="bar", bins= 30) +
-  facet_wrap(~country_name, ncol = 4, scales = "free_y") +
-  theme_bw()+
-  labs(x = "Distance to EEZ boundary (km)", y = "Fishing hours")+
-  theme(legend.position = "none")
+country_names <- unique(country_data_2018$country_name)
 
-ggsave(paste0(results_dir, "/country_effort_by_distance_bar_plot.png"), dpi = 200, width = 8, height = 9)
+for(i in 1:length(country_names)){
+  
+  name_nospace <- gsub("\\s", "", country_names[i]) 
+  file_name <- paste0("comp_bin_sizes_", name_nospace)
+  
+  plot <- country_data_2018 %>%
+  dplyr::filter(country_name == country_names[i]) %>%
+  ggplot() +
+  aes(x = distance_to_eez_rounded_km, y = fishing_hours, group = country_name) +
+  geom_point() +
+  geom_vline(xintercept = 0)+
+  facet_wrap(~bin_size, ncol = 2, scales = "free") +
+  theme_bw()+
+  labs(title = paste0("Fishing effort by distance to SID EEZ boundaries (2018) - ", country_names[i]), x = "Distance to EEZ boundary (km)", y = "Fishing hours")+
+  theme(legend.position = "none")
+  
+  ggsave(paste0(results_dir, "/", file_name, ".png"), dpi = 200, width = 12, height = 12)
+}
+
 ```
 

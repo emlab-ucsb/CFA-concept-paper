@@ -1,0 +1,32 @@
+---
+title: "Experimenting with the Spatial First Differences package"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+devtools::install_github("hdruckenmiller/SFD")
+library(SFD)
+```
+
+## Spatial first differences
+
+Spatial first differences (SFD) is a methodology to identify causal effects when unobservable heterogeneity exists. The idea being that when observational units are adjacent to one another, it might be sufficient to regress the differences in the outcome on the treatment (using space as an index) and omit all covariates. 
+
+This approach works as long as local changes in the treatment and unobservable confounders are not systematically correlated between immediately adjacent neighbors in space. 
+
+See 
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
