@@ -154,7 +154,9 @@ dataset_filter_10km <- final_eez_dataset %>%
   filter(year == 2018) %>%
   mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
   group_by(mrgid_eez) %>%
-  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/10)*10) %>%
+  mutate(distance_to_eez_rounded_km = ifelse(distance_to_eez_boundary_km >=0, 
+                                             ceiling(distance_to_eez_boundary_km/10)*10,
+                                             floor(distance_to_eez_boundary_km/10)*10)) %>%
   ungroup() %>%
   group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
   summarize(fishing_hours = sum(fishing_hours)) %>%
@@ -164,7 +166,9 @@ dataset_filter_20km <- final_eez_dataset %>%
   filter(year == 2018) %>%
   mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
   group_by(mrgid_eez) %>%
-  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/bin_size_km)*bin_size_km) %>%
+  mutate(distance_to_eez_rounded_km = ifelse(distance_to_eez_boundary_km >=0, 
+                                             ceiling(distance_to_eez_boundary_km/20)*20,
+                                             floor(distance_to_eez_boundary_km/20)*20)) %>%
   ungroup() %>%
   group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
   summarize(fishing_hours = sum(fishing_hours)) %>%
@@ -174,7 +178,9 @@ dataset_filter_40km <- final_eez_dataset %>%
   filter(year == 2018) %>%
   mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
   group_by(mrgid_eez) %>%
-  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/40)*40) %>%
+  mutate(distance_to_eez_rounded_km = ifelse(distance_to_eez_boundary_km >=0, 
+                                             ceiling(distance_to_eez_boundary_km/40)*40,
+                                             floor(distance_to_eez_boundary_km/40)*40)) %>%
   ungroup() %>%
   group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
   summarize(fishing_hours = sum(fishing_hours)) %>%
@@ -184,7 +190,9 @@ dataset_filter_100km <- final_eez_dataset %>%
   filter(year == 2018) %>%
   mutate(distance_to_eez_boundary_km = ifelse(inside_eez == FALSE, distance_to_eez_boundary_meters / 1000, -1*(distance_to_eez_boundary_meters / 1000))) %>%
   group_by(mrgid_eez) %>%
-  mutate(distance_to_eez_rounded_km = round(distance_to_eez_boundary_km/100)*100) %>%
+  mutate(distance_to_eez_rounded_km = ifelse(distance_to_eez_boundary_km >=0, 
+                                             ceiling(distance_to_eez_boundary_km/100)*100,
+                                             floor(distance_to_eez_boundary_km/100)*100)) %>%  
   ungroup() %>%
   group_by(mrgid_eez, distance_to_eez_rounded_km) %>%
   summarize(fishing_hours = sum(fishing_hours)) %>%
@@ -208,15 +216,16 @@ for(i in 1:length(country_names)){
   plot <- country_data_2018 %>%
   dplyr::filter(country_name == country_names[i]) %>%
   ggplot() +
-  aes(x = distance_to_eez_rounded_km, y = fishing_hours, group = country_name) +
-  geom_point() +
+  aes(x = distance_to_eez_rounded_km, y = fishing_hours, group = country_name, fill = distance_to_eez_rounded_km) +
+  geom_point(size = 4, shape = 21) +
   geom_vline(xintercept = 0)+
+  scale_fill_gradient2(low =scales::muted("blue"), mid = "white", high = scales::muted("red"), midpoint = 0)+
   facet_wrap(~bin_size, ncol = 2, scales = "free") +
   theme_bw()+
   labs(title = paste0("Fishing effort by distance to SID EEZ boundaries (2018) - ", country_names[i]), x = "Distance to EEZ boundary (km)", y = "Fishing hours")+
   theme(legend.position = "none")
   
-  ggsave(paste0(results_dir, "/", file_name, ".png"), dpi = 200, width = 12, height = 12)
+  ggsave(paste0(results_dir, "/comp_bin_sizes_country/", file_name, ".png"), dpi = 200, width = 12, height = 10)
 }
 
 ```
