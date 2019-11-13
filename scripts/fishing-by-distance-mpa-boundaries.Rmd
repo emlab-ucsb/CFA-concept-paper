@@ -1,0 +1,681 @@
+---
+title: "Assigning the distance to MPA boundaries to all GFW points of fishing activity"
+output: html_notebook
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, message = FALSE)
+
+# Necessary libraries
+library(tidyverse)
+library(bigrquery)
+library(sf)
+library(janitor)
+library(lwgeom)
+
+# Bigquery project
+ucsb_project <-  "ucsb-gfw"
+
+```
+
+## Step 1: Isolating MPA boundaries
+
+We downloaded the global dataset of protected areas (marine and terrestrial) from https://www.protectedplanet.net/ on November 13, 2019. 
+
+As we are only interested in marine protected areas, we first need to filter this dataset to remove terrestrial and freshwater protected areas (MARINE = 2). Due to the size of the global protected areas dataset, this was done using QGIS prior to importing into R. We then uploaded the resulting shapefile to mapshaper.org and simplified it to 0.5%. The resulting file is stored in `./data/WDPA_Nov2019_Marine_Only/`. 
+
+```{r}
+# Read in MPA data and convert to text format for upload to Bigquery
+mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_Marine_Only/"), layer = "WDPA_Nov2019_Marine_Only", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+  clean_names(case = "snake") %>%
+  dplyr::select(name, desig = desig_eng, desig_type, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
+  st_make_valid() %>%
+  mutate(mpa_boundary = st_as_text(geometry)) %>%
+  st_set_geometry(NULL)
+
+# Filter for only MPAs that include some portion as a no-take
+no_take_mpa_boundaries <- mpa_boundaries %>%
+  dplyr::filter(no_take %in% c("Part", "All"))
+
+# Filter out ones larger than some area - may have to play around with what this area is for now... 
+no_take_lsmpa_boundaries <- no_take_mpa_boundaries %>%
+  dplyr::filter(area_km > 10000)
+
+write_csv(no_take_lsmpa_boundaries, path = here::here("results", "LSMPAs", "no_take_lsmpa_boundaries.csv"))
+```
+
+For this analysis, we only extract MPAs where some portion has been designated as a "no-take" reserve, and we only consider reserves with a total size greater than 10,000 km2. 
+
+```{r}
+# Upload LSMPA boundaries to BQ
+lsmpa_table <- bq_table(project = ucsb_project, table = "lsmpa_boundaries", dataset = "ocean_halos_v2") 
+
+if(bq_table_exists(lsmpa_table) == F){
+  
+  lsmpa_table %>%
+      bq_table_create()
+}else{
+  
+  lsmpa_table %>%
+    bq_table_delete() %>%
+    bq_table_upload(values = no_take_lsmpa_boundaries)
+}
+```
+
+```{r}
+# Set grid resolution
+resolution <- 0.1
+lats <- seq(-90 + resolution / 2, 90 - resolution / 2, resolution)
+```
+
+```{r}
+# Make EEZ boundaries and shape spatial
+sql<-"#standardSQL
+SELECT mrgid_eez,
+sovereign_iso3,
+territory_iso3,
+ST_GEOGFROMTEXT(eez_boundary) eez_boundary
+FROM `ucsb-gfw.ocean_halos.eez_200nm_boundaries`
+LEFT JOIN
+(SELECT mrgid_eez,sovereign_iso3,territory_iso3 FROM `ucsb-gfw.ocean_halos.eez_info_lookup`)
+USING (mrgid_eez)"
+
+# Upload EEZ boundaries to BQ
+# bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos") %>% 
+#   bq_table_create()
+bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos"), use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+```{r}
+# Pull in gridded EEZ info
+# sql<-"#standardSQL
+#   WITH 
+#   crossed_gridcode AS(
+#   SELECT
+#     CAST(SUBSTR(gridcode, 5, 7) AS FLOAT64) lon,
+#     CAST(SUBSTR(gridcode, 17, 7) AS FLOAT64) lat,
+#     CAST(mrgid_eez AS INT64) mrgid_eez
+#   FROM
+#     `world-fishing-827.pipe_static.spatial_measures_20181025`
+#   LEFT JOIN
+#     UNNEST(regions.eez) mrgid_eez
+#   WHERE
+#     elevation_m <= 0),
+# 
+# grouped_grids AS(
+#   SELECT
+#     FLOOR(lat / 0.025) * 0.025 + 0.0125 lat_bin,
+#     FLOOR(lon / 0.025) * 0.025 + 0.0125 lon_bin,
+#     mrgid_eez,
+#     COUNT(*) count
+#   FROM
+#     crossed_gridcode
+#   GROUP BY
+#     lat_bin,
+#     lon_bin,
+#     mrgid_eez),
+# 
+# grouped_grids_2 AS(
+#   SELECT
+#     *,
+#     FORMAT('lon:%+07.2f_lat:%+07.2f',
+#       lon_bin,
+#       lat_bin) AS gridcode_binned
+#   FROM
+#     grouped_grids),
+# 
+# group_grids_3 AS(
+#   SELECT
+#     lat_bin,
+#     lon_bin,
+#     gridcode_binned,
+#     mrgid_eez,
+#     count,
+#     ROW_NUMBER() OVER (PARTITION BY gridcode_binned ORDER BY count DESC) AS eez_rank
+#   FROM
+#     grouped_grids_2 )
+# SELECT
+#   *
+# FROM
+#   group_grids_3
+# WHERE lat_bin <90 AND lat_bin > -90 AND lon_bin < 180 AND lon_bin > -180"
+
+# We're just going to pull this from Gavin's table because I don't have access to this.
+sql<-"#standardSQL
+SELECT
+  *
+FROM
+  `ucsb-gfw.eez_analysis.grid_eez_locations`"
+
+
+bq_table(project = ucsb_project, table = "grid_eez_locations", dataset = "ocean_halos") %>% 
+  bq_table_create()
+bq_table(project = ucsb_project, table = "grid_eez_locations", dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project, sql, destination_table = bq_table(project = ucsb_project, table = "grid_eez_locations", dataset = "ocean_halos"), use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+```{r}
+# Condense this down to relevant areas
+sql<-"#standardSQL
+WITH
+  multi_grids AS(
+  SELECT
+    gridcode_binned
+  FROM
+    `ucsb-gfw.ocean_halos.grid_eez_locations`
+  WHERE
+    eez_rank > 1
+  GROUP BY
+    gridcode_binned ),
+
+eez_grids AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    ST_GeogPoint(lon_bin,
+      lat_bin) grid_location,
+    gridcode_binned,
+    mrgid_eez
+  FROM (
+    SELECT
+      *
+    FROM
+      `ucsb-gfw.ocean_halos.grid_eez_locations`
+    WHERE
+      NOT gridcode_binned IN (
+      SELECT
+        gridcode_binned
+      FROM
+        multi_grids)))
+SELECT
+  *
+FROM
+  eez_grids"
+
+# bq_table(project = ucsb_project, table = "grid_eez_locations_condensed", dataset = "ocean_halos") %>% 
+#   bq_table_create()
+bq_table(project = ucsb_project,table = "grid_eez_locations_condensed",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "grid_eez_locations_condensed",dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+```{r}
+# Get distances for points inside relevant EEZs
+sql<-paste0("#standardSQL
+WITH
+  eez_grids AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    grid_location,
+    gridcode_binned,
+    mrgid_eez,
+    sovereign_iso3,
+    territory_iso3,
+    eez_boundary
+  FROM `ucsb-gfw.ocean_halos.grid_eez_locations_condensed`
+  JOIN (
+    SELECT
+      *
+    FROM
+      `ucsb-gfw.ocean_halos.eez_200nm_boundaries_spatial`)
+  USING
+    (mrgid_eez))
+
+SELECT
+  lat_bin,
+  lon_bin,
+  gridcode_binned,
+  mrgid_eez,
+  sovereign_iso3 closest_eez_boundary_sovereign,
+  territory_iso3 closest_eez_boundary_territory,
+  TRUE inside_eez,
+  ST_Distance(eez_boundary, grid_location) distance_to_eez_boundary_meters
+FROM
+  eez_grids
+WHERE
+ mrgid_eez IN (", SID_codes_string, ")")
+
+# bq_table(project = ucsb_project,table = "master_table_inside_eez_SID",dataset = "ocean_halos") %>% 
+#   bq_table_create()
+bq_table(project = ucsb_project,table = "master_table_inside_eez_SID",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project, sql, destination_table = bq_table(project = ucsb_project, table = "master_table_inside_eez_SID",dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+
+```{r}
+sql<-paste0("#standardSQL
+  WITH high_seas_grids AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    grid_location,
+    gridcode_binned
+  FROM
+    `ucsb-gfw.ocean_halos.grid_eez_locations_condensed`
+  WHERE
+    mrgid_eez IS NULL),
+
+  eez_grids AS(
+  SELECT
+    *
+  FROM
+    high_seas_grids
+  CROSS JOIN (
+    SELECT
+    eez_boundary,
+    mrgid_eez,
+    sovereign_iso3,
+    territory_iso3
+    FROM
+      `ucsb-gfw.ocean_halos.eez_200nm_boundaries_spatial`)),
+
+  all_info AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    gridcode_binned,
+    mrgid_eez,
+    sovereign_iso3 closest_eez_boundary_sovereign,
+    territory_iso3 closest_eez_boundary_territory,
+    FALSE inside_eez,
+    ST_Distance(eez_boundary,
+      grid_location) distance_to_eez_boundary_meters
+  FROM
+    eez_grids),
+
+  ranked_info AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    gridcode_binned,
+    mrgid_eez,
+    closest_eez_boundary_sovereign,
+    closest_eez_boundary_territory,
+    inside_eez,
+    distance_to_eez_boundary_meters,
+    ROW_NUMBER() OVER (PARTITION BY gridcode_binned ORDER BY distance_to_eez_boundary_meters ASC) AS eez_rank
+  FROM
+    all_info)
+
+SELECT
+  lat_bin,
+  lon_bin,
+  gridcode_binned,
+  mrgid_eez,
+  closest_eez_boundary_sovereign,
+  closest_eez_boundary_territory,
+  inside_eez,
+  distance_to_eez_boundary_meters
+FROM
+  ranked_info
+WHERE
+  eez_rank = 1
+  AND mrgid_eez IN (", SID_codes_string, ")")
+
+# bq_table(project = ucsb_project,table = "master_table_high_seas_SID",dataset = "ocean_halos") %>% 
+#   bq_table_create()
+bq_table(project = ucsb_project,table = "master_table_high_seas_SID",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "master_table_high_seas_SID",dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+```{r}
+# Combine master tables into one for SIDs
+# Merge inside and high seas tables
+sql <- "
+SELECT
+*
+FROM
+`ucsb-gfw.ocean_halos.master_table_inside_eez_SID`
+UNION ALL
+(SELECT
+*
+FROM
+`ucsb-gfw.ocean_halos.master_table_high_seas_SID`)"
+
+bq_table(project = ucsb_project,table = "master_table_all_SID",dataset = "ocean_halos") %>% 
+  bq_table_create()
+bq_table(project = ucsb_project,table = "master_table_all_SID",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "master_table_all_SID",dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+
+```
+
+```{r}
+test_eez <- 8440
+# Make test map of FP to see how this worked
+test <- bq_project_query(ucsb_project, "SELECT * FROM `ucsb-gfw.ocean_halos.master_table_high_seas` WHERE mrgid_eez = 8440", allowLargeResults = TRUE) %>%
+  bq_table_download(max_results = Inf)
+
+test_boundary <- st_read(here::here("data", "World_EEZ_v10_20180221/"), layer="eez_boundaries_v10", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+    filter(Line_type == "200 NM") %>%
+  dplyr::select(mrgid_eez = MRGID_EEZ1, territory = Territory1, sovereign = Sovereign1) %>%
+  filter(mrgid_eez == test_eez)
+
+world_land <-
+  st_as_sf(rworldmap::countriesLow) ## data(countriesLow) is from the rworldmap package
+
+test %>%
+  mutate(distance_to_eez_boundary_nm = distance_to_eez_boundary_meters / 1852) %>%
+  filter(distance_to_eez_boundary_nm < 200) %>%
+  #filter(mrgid_eez == test_eez)  %>%
+  ggplot()+
+  geom_tile(aes(x = lon_bin, y=lat_bin, fill = distance_to_eez_boundary_nm)) +
+  coord_map(projection = "mollweide") +
+  geom_sf(data=world_land, color = NA, fill="grey30") +
+  #geom_sf(data=test_boundary,color="red") +
+  viridis::scale_fill_viridis("[nm]") +
+  xlab("") +
+  ylab("") +
+  theme(plot.title = element_text(color="black",hjust=0,vjust=1, size=15),
+        panel.background = element_rect(fill ="black"),
+        legend.text = element_text(color = "black", size = 15),
+        legend.title = element_text(color = "black", size = 15),
+        legend.title.align = 1,
+        legend.background = element_rect(fill="white"),
+        legend.direction="vertical",
+        legend.justification = "center",
+        axis.text = element_text(color = "black", size = rel(1)),
+        panel.grid.major = element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  ggtitle("Distance to all 200nm EEZ boundaries, capped at 200nm\n(full dataset has no distance cap)")
+
+```
+
+```{r}
+# Pull in fishing data from 2016, 2017, 2018
+
+# sql<-"#standardSQL
+# WITH
+#  vessel_info AS(
+#   SELECT
+#     ssvid,
+#     year,
+#     best.best_vessel_class gear,
+#     best.best_flag flag
+#   FROM
+#     `world-fishing-827.gfw_research.vi_ssvid_byyear`
+#   WHERE
+#    on_fishing_list_best
+#    AND activity.offsetting IS FALSE),
+#      
+# base AS(
+#   SELECT
+#     ssvid,
+#     EXTRACT(year FROM timestamp) year,
+#     FLOOR(lat / 0.025) * 0.025 + 0.0125 lat_bin,
+#     FLOOR(lon / 0.025) * 0.025 + 0.0125 lon_bin,
+#     IF(distance_from_port_m >= 1000 AND speed >= 1 AND nnet_score2 = 1, hours, NULL) fishing_hours
+#   FROM
+#     `world-fishing-827.gfw_research.pipe_production_b_fishing`
+#   WHERE
+#     _PARTITIONTIME BETWEEN TIMESTAMP('2016-01-01')
+#     AND TIMESTAMP('2018-12-31')
+#     AND seg_id IN (
+#         SELECT
+#         seg_id
+#         FROM
+#          `world-fishing-827.gfw_research.pipe_production_b_segs`
+#         WHERE
+#         good_seg)),
+#   
+# base_binned AS(
+#   SELECT
+#     lat_bin,
+#     lon_bin,
+#     year,
+#     ssvid,
+#     SUM(fishing_hours) fishing_hours
+#   FROM
+#     base
+#   GROUP BY
+#     lat_bin,
+#     lon_bin,
+#     year,
+#     ssvid),
+#     
+# base_joined AS(
+#   SELECT
+#     *
+#   FROM
+#     base_binned
+#   JOIN
+#     vessel_info
+#   USING
+#     (ssvid,
+#      year))
+#      
+# SELECT
+#   lat_bin,
+#   lon_bin,
+#   year,
+#   flag,
+#   gear,
+#   SUM(fishing_hours) fishing_hours
+# FROM
+#   base_joined
+# GROUP BY
+#   lat_bin,
+#   lon_bin,
+#   year,
+#   flag,
+#   gear"
+
+# bq_table(project = ucsb_project,table = "fishing_data_2016_2018",dataset = "eez_analysis") %>% 
+#   bq_table_delete()
+# bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "fishing_data_2016_2018",dataset = "eez_analysis"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+
+# ^ Did this chunk in BQ directly because it's easier and faster... 
+```
+
+```{r}
+# Combine high seas bins with fishing information
+sql<-"#standardSQL
+ WITH distance_info AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    gridcode_binned,
+    mrgid_eez,
+    closest_eez_boundary_sovereign as eez_boundary_sovereign,
+    closest_eez_boundary_territory as eez_boundary_territory,
+    inside_eez,
+    distance_to_eez_boundary_meters
+  FROM
+    `ucsb-gfw.ocean_halos.master_table_all_SID`
+  WHERE
+    NOT closest_eez_boundary_sovereign IS NULL),
+
+fishing_info AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    year,
+    SUM(fishing_hours) fishing_hours
+  FROM
+    `ucsb-gfw.ocean_halos.fishing_data_2016_2018`
+  WHERE NOT fishing_hours IS NULL
+  GROUP BY
+    lat_bin,
+    lon_bin,
+    year),
+
+joined_table AS(
+SELECT
+  *
+FROM
+  distance_info
+JOIN
+  fishing_info
+USING(lat_bin,
+    lon_bin))
+
+SELECT
+  lat_bin,
+  lon_bin,
+  year,
+  mrgid_eez,
+  eez_boundary_sovereign,
+  eez_boundary_territory,
+  inside_eez,
+  distance_to_eez_boundary_meters,
+  SUM(fishing_hours) fishing_hours
+FROM
+  joined_table
+GROUP BY
+  lat_bin,
+  lon_bin,
+  year,
+  mrgid_eez,
+  eez_boundary_sovereign,
+  eez_boundary_territory,
+  inside_eez,
+  distance_to_eez_boundary_meters
+ORDER BY
+  year,
+  lat_bin,
+  lon_bin,
+  mrgid_eez,
+  eez_boundary_sovereign,
+  eez_boundary_territory,
+  distance_to_eez_boundary_meters
+"
+bq_table(project = ucsb_project,table = "full_dataset_SID",dataset = "ocean_halos") %>%
+  bq_table_create()
+bq_table(project = ucsb_project,table = "full_dataset_SID",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "full_dataset_SID",dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+```{r}
+# Minimum distances
+sql<-"SELECT
+closest_eez_boundary_territory,
+closest_eez_boundary_sovereign,
+inside_eez ,
+MIN( distance_to_eez_boundary_meters ) min_distance
+FROM
+  `ucsb-gfw.ocean_halos.master_table_all_SID`
+  WHERE NOT closest_eez_boundary_territory IS NULL
+GROUP BY
+closest_eez_boundary_territory,
+closest_eez_boundary_sovereign ,
+inside_eez
+ORDER BY
+closest_eez_boundary_territory,
+inside_eez,
+min_distance"
+
+min_distances_by_eez <- bq_project_query(ucsb_project, sql) %>%
+  bq_table_download(max_results = Inf)
+
+write_csv(min_distances_by_eez, path = here::here("data", "min_distances_by_eez.csv"))
+```
+
+```{r}
+# Find grid cells that are overlapping the line, split between inside and outside
+sql<-"#standardSQL
+  CREATE TEMP FUNCTION RADIANS(x FLOAT64) AS ( ACOS(-1) * x / 180 ); CREATE TEMP FUNCTION RADIANS_TO_KM(x FLOAT64) AS ( 111.045 * 180 * x / ACOS(-1) ); CREATE TEMP FUNCTION HAVERSINE(lat1 FLOAT64,
+    long1 FLOAT64,
+    lat2 FLOAT64,
+    long2 FLOAT64) AS (( RADIANS_TO_KM( ACOS(COS(RADIANS(lat1)) * COS(RADIANS(lat2)) * COS(RADIANS(long1) - RADIANS(long2)) + SIN(RADIANS(lat1)) * SIN(RADIANS(lat2)))) ) * 1000); 
+WITH expanded AS(
+  SELECT
+    *,
+    HAVERSINE(lat_bin,
+      lon_bin-0.05,
+      lat_bin,
+      lon_bin+0.05) x_dist_m,
+    HAVERSINE(lat_bin-0.05,
+      lon_bin,
+      lat_bin+0.05,
+      lon_bin) y_dist_m
+  FROM
+    `ucsb-gfw.ocean_halos.full_dataset_SID`),
+  master AS(
+  SELECT
+    * EXCEPT(fishing_hours,
+      inside_eez,
+      x_dist_m,
+      y_dist_m),
+    fishing_hours fishing_hours,
+    CAST(inside_eez AS BOOL) inside_eez,
+    FALSE split_grid
+  FROM
+    expanded
+  WHERE
+    distance_to_eez_boundary_meters >= (GREATEST(x_dist_m,y_dist_m)/2)),
+  
+filtered AS(
+  SELECT
+    * EXCEPT(fishing_hours,
+    distance_to_eez_boundary_meters,
+      inside_eez,
+      x_dist_m,
+      y_dist_m),
+      (2 * distance_to_eez_boundary_meters + GREATEST(x_dist_m,y_dist_m)) / 4 distance_to_eez_boundary_meters,
+    fishing_hours * distance_to_eez_boundary_meters / (GREATEST(x_dist_m,y_dist_m)/2) fishing_hours,
+    CAST(inside_eez AS BOOL) inside_eez,
+    TRUE split_grid
+  FROM
+    expanded
+  WHERE
+    distance_to_eez_boundary_meters < (GREATEST(x_dist_m,y_dist_m)/2)),
+  filtered_flipped AS(
+  SELECT
+    * EXCEPT(fishing_hours,
+    distance_to_eez_boundary_meters,
+      inside_eez,
+      x_dist_m,
+      y_dist_m),
+      (GREATEST(x_dist_m,y_dist_m) - 2 * distance_to_eez_boundary_meters) / 4 distance_to_eez_boundary_meters,
+    fishing_hours * (1 - distance_to_eez_boundary_meters / (GREATEST(x_dist_m,y_dist_m)/2)) fishing_hours,
+    NOT(CAST(inside_eez AS BOOL)) inside_eez,
+    TRUE split_grid
+  FROM
+    expanded
+  WHERE
+    distance_to_eez_boundary_meters < (GREATEST(x_dist_m,y_dist_m)/2)),
+
+joined AS(
+  SELECT
+    *
+  FROM
+    filtered UNION ALL (
+    SELECT
+      *
+    FROM
+      master) UNION ALL (
+    SELECT
+      *
+    FROM
+      filtered_flipped))
+SELECT
+  *
+FROM
+  joined"
+
+bq_table(project = ucsb_project,table = "final_eez_dataset_SID",dataset = "ocean_halos") %>% 
+  bq_table_create()
+bq_table(project = ucsb_project,table = "final_eez_dataset_SID",dataset = "ocean_halos") %>% 
+  bq_table_delete()
+bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project,table = "final_eez_dataset_SID", dataset = "ocean_halos"),use_legacy_sql = FALSE, allowLargeResults = TRUE)
+```
+
+
+```{r}
+# final_eez_dataset <- bq_project_query(ucsb_project, "SELECT * FROM `ucsb-gfw.ocean_halos.full_dataset`") %>%
+#   bq_table_download(max_results = Inf)
+# 
+# write_csv(final_eez_dataset, path = here::here("data", "final_eez_dataset.csv"))
+```
+
