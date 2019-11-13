@@ -22,13 +22,13 @@ ucsb_project <-  "ucsb-gfw"
 
 We downloaded the global dataset of protected areas (marine and terrestrial) from https://www.protectedplanet.net/ on November 13, 2019. 
 
-As we are only interested in marine protected areas, we first need to filter this dataset to remove terrestrial and freshwater protected areas (MARINE = 2). Due to the size of the global protected areas dataset, this was done using QGIS prior to importing into R. We then uploaded the resulting shapefile to mapshaper.org and simplified it to 0.5%. The resulting file is stored in `./data/WDPA_Nov2019_Marine_Only/`. 
+As we are only interested in marine protected areas, we first need to filter this dataset to remove completely terrestrial protected areas (MARINE != 0). Due to the size of the global protected areas dataset, this was done using QGIS prior to importing into R. We then uploaded the resulting shapefile to mapshaper.org and simplified it to 0.5%. The resulting file is stored in `./data/WDPA_Nov2019_No_Terrestrial/`. 
 
 ```{r}
 # Read in MPA data and convert to text format for upload to Bigquery
-mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_Marine_Only/"), layer = "WDPA_Nov2019_Marine_Only", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"), layer = "WDPA_Nov2019_No_Terrestrial", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
   clean_names(case = "snake") %>%
-  dplyr::select(name, desig = desig_eng, desig_type, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
+  dplyr::select(wdpa_pid, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
   st_make_valid() %>%
   mutate(mpa_boundary = st_as_text(geometry)) %>%
   st_set_geometry(NULL)
