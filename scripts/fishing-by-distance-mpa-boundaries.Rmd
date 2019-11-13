@@ -25,21 +25,26 @@ We downloaded the global dataset of protected areas (marine and terrestrial) fro
 As we are only interested in marine protected areas, we first need to filter this dataset to remove terrestrial and freshwater protected areas (MARINE = 2). Due to the size of the global protected areas dataset, this was done using QGIS prior to importing into R. We then uploaded the resulting shapefile to mapshaper.org and simplified it to 0.5%. The resulting file is stored in `./data/WDPA_Nov2019_Marine_Only/`. 
 
 ```{r}
-# Read in MPA data and convert to text format for upload to Bigquery
-mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_Marine_Only/"), layer = "WDPA_Nov2019_Marine_Only", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+# Read in MPA data and do some tidying
+mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_Marine_Only/"), layer = "WDPA_Nov2019_Marine_Only", stringsAsFactors=FALSE) %>%
   clean_names(case = "snake") %>%
-  dplyr::select(name, desig = desig_eng, desig_type, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
+  dplyr::select(name, desig = desig_eng, desig_type, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, parent_iso3 = parent_iso, iso3 = iso3) %>%
+  group_by(name, desig, desig_type, area_km, no_take, area_no_take_km, status, year, parent_iso3, iso3) %>%
+  summarize(geometry = st_combine(geometry)) %>%
+  ungroup() %>%
   st_make_valid() %>%
+  st_cast("MULTIPOLYGON")
+
+# Filter for only MPAs that include some portion as a no-take and filter by size
+no_take_lsmpa_boundaries <- mpa_boundaries %>%
+  dplyr::filter(no_take %in% c("All")) %>%
+  dplyr::filter(area_km > 50000) %>%
+  dplyr::filter(year != 0)
+
+# Turn geometry into text
+no_take_lsmpa_boundaries <- no_take_lsmpa_boundaries %>%
   mutate(mpa_boundary = st_as_text(geometry)) %>%
-  st_set_geometry(NULL)
-
-# Filter for only MPAs that include some portion as a no-take
-no_take_mpa_boundaries <- mpa_boundaries %>%
-  dplyr::filter(no_take %in% c("Part", "All"))
-
-# Filter out ones larger than some area - may have to play around with what this area is for now... 
-no_take_lsmpa_boundaries <- no_take_mpa_boundaries %>%
-  dplyr::filter(area_km > 10000)
+  st_set_geometry(NULL) 
 
 write_csv(no_take_lsmpa_boundaries, path = here::here("results", "LSMPAs", "no_take_lsmpa_boundaries.csv"))
 ```
@@ -52,13 +57,15 @@ lsmpa_table <- bq_table(project = ucsb_project, table = "lsmpa_boundaries", data
 
 if(bq_table_exists(lsmpa_table) == F){
   
-  lsmpa_table %>%
-      bq_table_create()
+  bq_table_create(lsmpa_table, fields = no_take_lsmpa_boundaries) %>%
+     bq_table_upload(values = no_take_lsmpa_boundaries)
+  
 }else{
   
-  lsmpa_table %>%
-    bq_table_delete() %>%
-    bq_table_upload(values = no_take_lsmpa_boundaries)
+  bq_table_delete(bq_table(project = ucsb_project, table = "lsmpa_boundaries", dataset = "ocean_halos_v2"))
+  
+  bq_table_create(lsmpa_table, fields = no_take_lsmpa_boundaries) %>%
+     bq_table_upload(values = no_take_lsmpa_boundaries)
 }
 ```
 
@@ -69,78 +76,89 @@ lats <- seq(-90 + resolution / 2, 90 - resolution / 2, resolution)
 ```
 
 ```{r}
-# Make EEZ boundaries and shape spatial
-sql<-"#standardSQL
-SELECT mrgid_eez,
-sovereign_iso3,
-territory_iso3,
-ST_GEOGFROMTEXT(eez_boundary) eez_boundary
-FROM `ucsb-gfw.ocean_halos.eez_200nm_boundaries`
-LEFT JOIN
-(SELECT mrgid_eez,sovereign_iso3,territory_iso3 FROM `ucsb-gfw.ocean_halos.eez_info_lookup`)
-USING (mrgid_eez)"
+# Make LSMPA boundaries spatial
+sql<-"
+SELECT 
+ *,
+ ST_GEOGFROMTEXT(mpa_boundary) mpa_boundary_spatial
+FROM 
+ `ucsb-gfw.ocean_halos_v2.lsmpa_boundaries`"
 
-# Upload EEZ boundaries to BQ
-# bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos") %>% 
-#   bq_table_create()
-bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos") %>% 
-  bq_table_delete()
-bq_project_query(ucsb_project,sql, destination_table = bq_table(project = ucsb_project, table = "eez_200nm_boundaries_spatial", dataset = "ocean_halos"), use_legacy_sql = FALSE, allowLargeResults = TRUE)
+lsmpa_spatial_table <- bq_table(project = ucsb_project, table = "lsmpa_boundaries_spatial", dataset = "ocean_halos_v2") 
+
+if(bq_table_exists(lsmpa_spatial_table) == F){
+  
+  bq_table_create(lsmpa_spatial_table)
+  bq_project_query(ucsb_project, 
+                   sql, 
+                   destination_table = lsmpa_spatial_table, 
+                   use_legacy_sql = FALSE, 
+                   allowLargeResults = TRUE)
+  
+}else{
+  
+  bq_table_delete(lsmpa_spatial_table)
+  bq_project_query(ucsb_project, 
+                   sql, 
+                   destination_table = lsmpa_spatial_table, 
+                   use_legacy_sql = FALSE, 
+                   allowLargeResults = TRUE)
+}
 ```
 
 ```{r}
 # Pull in gridded EEZ info
-# sql<-"#standardSQL
-#   WITH 
-#   crossed_gridcode AS(
-#   SELECT
-#     CAST(SUBSTR(gridcode, 5, 7) AS FLOAT64) lon,
-#     CAST(SUBSTR(gridcode, 17, 7) AS FLOAT64) lat,
-#     CAST(mrgid_eez AS INT64) mrgid_eez
-#   FROM
-#     `world-fishing-827.pipe_static.spatial_measures_20181025`
-#   LEFT JOIN
-#     UNNEST(regions.eez) mrgid_eez
-#   WHERE
-#     elevation_m <= 0),
-# 
-# grouped_grids AS(
-#   SELECT
-#     FLOOR(lat / 0.025) * 0.025 + 0.0125 lat_bin,
-#     FLOOR(lon / 0.025) * 0.025 + 0.0125 lon_bin,
-#     mrgid_eez,
-#     COUNT(*) count
-#   FROM
-#     crossed_gridcode
-#   GROUP BY
-#     lat_bin,
-#     lon_bin,
-#     mrgid_eez),
-# 
-# grouped_grids_2 AS(
-#   SELECT
-#     *,
-#     FORMAT('lon:%+07.2f_lat:%+07.2f',
-#       lon_bin,
-#       lat_bin) AS gridcode_binned
-#   FROM
-#     grouped_grids),
-# 
-# group_grids_3 AS(
-#   SELECT
-#     lat_bin,
-#     lon_bin,
-#     gridcode_binned,
-#     mrgid_eez,
-#     count,
-#     ROW_NUMBER() OVER (PARTITION BY gridcode_binned ORDER BY count DESC) AS eez_rank
-#   FROM
-#     grouped_grids_2 )
-# SELECT
-#   *
-# FROM
-#   group_grids_3
-# WHERE lat_bin <90 AND lat_bin > -90 AND lon_bin < 180 AND lon_bin > -180"
+sql2<-"
+ WITH
+  crossed_gridcode AS(
+  SELECT
+    CAST(SUBSTR(gridcode, 5, 7) AS FLOAT64) lon,
+    CAST(SUBSTR(gridcode, 17, 7) AS FLOAT64) lat,
+    CAST(wdpa_pid AS INT64) wdpa_pid
+  FROM
+    `world-fishing-827.pipe_static.spatial_measures_20181025`
+  LEFT JOIN
+    UNNEST(regions.mparu) wdpa_pid
+  WHERE
+    elevation_m <= 0),
+
+grouped_grids AS(
+  SELECT
+    FLOOR(lat / 0.025) * 0.025 + 0.0125 lat_bin,
+    FLOOR(lon / 0.025) * 0.025 + 0.0125 lon_bin,
+    wdpa_pid,
+    COUNT(*) count
+  FROM
+    crossed_gridcode
+  GROUP BY
+    lat_bin,
+    lon_bin,
+    wdpa_pid),
+
+grouped_grids_2 AS(
+  SELECT
+    *,
+    FORMAT('lon:%+07.2f_lat:%+07.2f',
+      lon_bin,
+      lat_bin) AS gridcode_binned
+  FROM
+    grouped_grids),
+
+group_grids_3 AS(
+  SELECT
+    lat_bin,
+    lon_bin,
+    gridcode_binned,
+    wdpa_pid,
+    count,
+    ROW_NUMBER() OVER (PARTITION BY gridcode_binned ORDER BY count DESC) AS mpa_rank
+  FROM
+    grouped_grids_2 )
+SELECT
+  *
+FROM
+  group_grids_3
+WHERE lat_bin <90 AND lat_bin > -90 AND lon_bin < 180 AND lon_bin > -180"
 
 # We're just going to pull this from Gavin's table because I don't have access to this.
 sql<-"#standardSQL
