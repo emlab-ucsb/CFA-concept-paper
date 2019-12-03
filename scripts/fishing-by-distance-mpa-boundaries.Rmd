@@ -14,8 +14,7 @@ library(janitor)
 library(lwgeom)
 
 # Bigquery project
-ucsb_project <-  "ucsb-gfw"
-
+ucsb_project <-  "emlab-gcp"
 ```
 
 ## Step 1: Isolating MPA boundaries
@@ -26,20 +25,11 @@ As we are only interested in marine protected areas, we first need to filter thi
 
 ```{r}
 # Read in MPA data and convert to text format for upload to Bigquery
-# mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"), layer = "WDPA_Nov2019_No_Terrestrial", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
-#   clean_names(case = "snake") %>%
-#   dplyr::select(wdpa_pid, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
-# =======
-# # Read in MPA data and do some tidying
-# mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_Marine_Only/"), layer = "WDPA_Nov2019_Marine_Only", stringsAsFactors=FALSE) %>%
-#   clean_names(case = "snake") %>%
-#   dplyr::select(name, desig = desig_eng, desig_type, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, parent_iso3 = parent_iso, iso3 = iso3) %>%
-#   group_by(name, desig, desig_type, area_km, no_take, area_no_take_km, status, year, parent_iso3, iso3) %>%
-#   summarize(geometry = st_combine(geometry)) %>%
-#   ungroup() %>%
-# >>>>>>> 75090126b3ed489a6284b513f8389ece9eef3ef3
-#   st_make_valid() %>%
-#   st_cast("MULTIPOLYGON")
+mpa_boundaries <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"), layer = "WDPA_Nov2019_No_Terrestrial", stringsAsFactors=FALSE, as_tibble=TRUE) %>%
+  clean_names(case = "snake") %>%
+  dplyr::select(wdpa_pid, area_km = rep_m_area, no_take, area_no_take_km = no_tk_area, status, year = status_yr, loc_parent_iso3 = parent_iso, loc_iso3 = iso3) %>%
+  st_make_valid() %>%
+  st_cast("MULTIPOLYGON")
 
 # Filter for only MPAs that include some portion as a no-take and filter by size
 no_take_lsmpa_boundaries <- mpa_boundaries %>%
