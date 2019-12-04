@@ -70,14 +70,10 @@ model <- function(r, K, X0, f, p, q, c, beta, L, alpha, theta_max, mu, w, chi) {
     H_f <- q * X_f * E_f                                                                                 # Harvest in fishing zone
     H_l <- q * X_r * L * E_l                                                                             # Harvest in lease zone
     H_i <- q * X_r * (1 - L) * E_i                                                                       # Illegal harvest
-    
-    # Escapement
-    S_f <- X_f - H_f                                                                                     # Escapement in fishing zone
-    S_r <- X_r - H_l - H_i                                                                               # Escapement in reserve
-    S <- S_f + S_r                                                                                       # Total escapement
+    H <- H_f + H_l + H_i                                                                                 # Total harvest
     
     # Growth
-    X_next <- S + (S * r * (1 - (S / K)))                                                                # Logistic growth
+    X_next <- X + (X * r * (1 - (X / K))) - H                                                            # Gordon-Schafer
     
     # Track state variables
     X_vec[i] <- X_now
