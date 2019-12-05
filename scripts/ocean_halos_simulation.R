@@ -28,19 +28,26 @@ source(here("scripts", "03_default_parameters.R"))
 text_size <- 12
 title_size <- 14
 
-plot_theme <- theme_bw()+
+plot_theme <- theme_bw() +
   theme(text = element_text(size = text_size),
-        plot.title = element_text(size = title_size))
+        plot.title = element_text(size = title_size),
+        rect = element_rect(fill = "transparent",
+                            colour = NA,
+                            color = NA,
+                            size = 0,
+                            linetype = 0),
+        legend.background = element_blank(),
+        legend.key = element_blank())
 
 l_legend <- "Lease area, L, as a fraction of total reserve size"
-b_legend <- "Equilibrium \n biomass"
+b_legend <- "Equilibrium\nbiomass"
+e_legend <- "Equilibrium\nbiomass"
   
 #### Plots we want ########
 
 # HEAT MAPS
 
 L <- seq(0.1, 1, length.out = 10)
-w <- w*10
 
 # Biomass heat maps here
 
@@ -74,7 +81,7 @@ res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b, z = equil_b))
   geom_raster(interpolate = T) +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Enforcement coefficient, "*mu)) +
-  scale_fill_viridis_c(name = b_legend)
+  scale_fill_viridis_c(name = b_legend) +
   plot_theme 
 
 # 2) fine vs L
@@ -143,7 +150,7 @@ res_3_plot <- ggplot(res_3, aes(x = L, y = chi_new, fill = equil_b, z = equil_b)
 
 # 4) cost vs L
 
-alpha_new <- seq(10, 1000, by = 10)
+alpha_new <- seq(100, 10000, by = 100)
 
 # Call the model on each combination of parameters
 res_4 <- expand_grid(L, alpha_new) %>% 
@@ -219,13 +226,7 @@ biomass_heat_plots <-
 biomass_heat_plots
 
 # Effort heat maps here
-w <- 180e2
-chis <- seq(0, 30000, by = 500)
-Ls <- seq(0.1, 1, by = 0.05)
-alphas <- seq(alpha / 10, alpha * 10, length.out = 50)
-
-
-E_chi_L <- expand_grid(L = Ls, chi = chis) %>% 
+E_chi_L <- expand_grid(L = L, chi = chi_new) %>% 
   mutate(equil_E_f = pmap_dbl(.l = list(L = L, chi = chi),
                               .f = wrapper,
                               r = r,
@@ -296,21 +297,8 @@ ggplot(data = E_chi_L,
   ggtitle(label = "Equilibrium effort in each zone")
 
 
-
-# E_chi_L %>% 
-#   filter(L %in% c(0.1, 0.5, 0.9)) %>% 
-#   mutate(dist = case_when(patch == "Fishing zone" ~ 1.5 * f,
-#                            patch == "Lease zone" ~ f * (1 - L) + (f * L / 2),
-#                            T ~ 0.5 * f * (1 - L)),
-#          L = paste("L = ", L)) %>% 
-#   ggplot(mapping = aes(x = dist, y = effort, color = chi, group = chi)) +
-#   geom_line() +
-#   facet_wrap(~L, ncol = 1) + 
-#   theme_minimal()
-
 # alpha, L, and efforts
-
-E_alpha_L <- expand_grid(L = Ls, alpha = alphas) %>% 
+E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>% 
   mutate(equil_E_f = pmap_dbl(.l = list(L = L, alpha = alpha),
                               .f = wrapper,
                               r = r,
