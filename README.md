@@ -1,4 +1,4 @@
-# Ocean-Halos
+# Repository
 
 Repository for the Ocean-Halos concept paper
 
@@ -19,10 +19,14 @@ Repository for the Ocean-Halos concept paper
    |__effort-by-distance-SID
    |__LSMPAs
 -- scripts
+   |__01_model.R
+   |__02_wrapper.R
+   |__03_default_parameters.R
    |__fishing-by-distance-eez-boundaries.nb.html
    |__fishing-by-distance-eez-boundaries.Rmd
    |__fishing-by-distance-mpa-boundaries.nb.html
    |__fishing-by-distance-mpa-boundaries.Rmd
+   |__ocean_halos_simulation.R
    |__SIDS-fishing-effort-by-distance.nb.html
    |__SIDS-fishing-effort-by-distance.Rmd
    |__spatial-first-differences-test.Rmd
@@ -30,4 +34,3 @@ Repository for the Ocean-Halos concept paper
 
 --------- 
 
-<a href="https://orcid.org/0000-0003-1245-589X" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0003-1245-589X</a>

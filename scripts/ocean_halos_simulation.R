@@ -289,12 +289,12 @@ ggplot(data = E_chi_L,
   scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = "Normalized\neffort",
+  guides(fill = guide_colorbar(title = e_legend,
                                frame.colour = "black",
                                ticks.colour = "black")) +
-  startR::ggtheme_plot() +
-  labs(x = "Proportion of reserve\nas lease zone (L)", y = quote("Lease price ("~chi~")")) +
-  ggtitle(label = "Equilibrium effort in each zone")
+  labs(x = l_legend, y = quote("Lease price ("~chi~")")) +
+  ggtitle(label = "Equilibrium effort in each zone") +
+  plot_theme
 
 
 # alpha, L, and efforts
@@ -361,12 +361,12 @@ ggplot(data = E_alpha_L,
   scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = "Normalized\neffort",
+  guides(fill = guide_colorbar(title = e_legend,
                                frame.colour = "black",
                                ticks.colour = "black")) +
-  startR::ggtheme_plot() +
-  labs(x = "Proportion of reserve\nas lease zone (L)", y = quote("Cost of enforcement("~alpha~")")) +
-  ggtitle(label = "Equilibrium effort in each zone")
+  labs(x = l_legend, y = quote("Lease price ("~chi~")")) +
+  ggtitle(label = "Equilibrium effort in each zone") +
+  plot_theme
 
 # SCATTER PLOTS (lines, or whatever)
 
