@@ -21,7 +21,7 @@ L <- 0.7                  # Size of the lease zone
 alpha <- 90               # Marginal cost of enforcement
 theta_max <- 1L           # Maximum attainable probability of detection
 mu <- 1e-3                # Enforcement coefficient
-w <- 1800                 # Per-unit-effort fine
+w <- 18000                # Per-unit-effort fine
 chi <- 1000               # Per-unit-access fee
 
 ## Duration of simulation
