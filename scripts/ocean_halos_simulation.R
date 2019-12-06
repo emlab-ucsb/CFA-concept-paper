@@ -24,23 +24,6 @@ source(here("scripts", "03_default_parameters.R"))
 #
 ################################################################################
 
-#### Plot theme #####
-
-text_size <- 10
-title_size <- 12
-
-plot_theme <- theme_bw() +
-  theme(text = element_text(size = text_size),
-        plot.title = element_text(size = title_size),
-        rect = element_rect(fill = "transparent",
-                            colour = NA,
-                            color = NA,
-                            size = 0,
-                            linetype = 0),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        strip.background = element_blank())
-
 l_legend <- "Proportion of reserve as lease area (L)"
 b_legend <- "Equilibrium\nbiomass (X / K)"
 e_legend <- "Equilibrium\neffort"
@@ -84,7 +67,7 @@ res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K)) +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Enforcement coefficient, "*mu)) +
   scale_fill_viridis_c(name = b_legend) +
-  plot_theme 
+  plot_theme()
 
 # 2) fine vs L
 # Changing r and running this cleans up the patchiness (try 0.5-2 times r). Slower growing species favor higher lease areas once the fine exceeds ~ 38000. Faster growing species favor a small lease area (the weird channel) above that point.  
@@ -117,7 +100,7 @@ res_2_plot <- ggplot(res_2, aes(x = L, y = w_new, fill = equil_b / K)) +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Fine, "*psi)) +
   scale_fill_viridis_c(name = b_legend) +
-  plot_theme
+  plot_theme()
 
 
 # 3) access fee vs L
@@ -148,7 +131,7 @@ res_3_plot <- ggplot(res_3, aes(x = L, y = chi_new, fill = equil_b / K)) +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Access fee, "*chi)) +
   scale_fill_viridis_c(name = b_legend) +
-  plot_theme
+  plot_theme()
 
 # 4) cost vs L
 
@@ -178,7 +161,7 @@ res_4_plot <- ggplot(res_4, aes(x = L, y = alpha_new, fill = equil_b / K)) +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Variable cost of enforcement, "*alpha)) +
   scale_fill_viridis_c(name = b_legend) +
-  plot_theme
+  plot_theme()
 
 
 # Combine
@@ -291,7 +274,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
 
 effort_fee_heatmap <-
   ggplot(data = E_chi_L,
-         mapping = aes(x = L, y = chi, fill = effort_norm, z = effort_norm)) +
+         mapping = aes(x = L, y = chi, fill = effort_norm)) +
   geom_raster(interpolate = T) +
   facet_wrap(~patch, ncol = 1) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
@@ -302,7 +285,7 @@ effort_fee_heatmap <-
                                ticks.colour = "black")) +
   labs(x = l_legend, y = quote("Lease price ("~chi~")")) +
   ggtitle(label = "Equilibrium effort in each zone") +
-  plot_theme
+  plot_theme()
 
 lazy_ggsave(plot = effort_fee_heatmap,
             filename = "effort_fee_heatmap",
@@ -371,6 +354,7 @@ effort_enforcement_cost_heatmap <-
   ggplot(data = E_alpha_L,
          mapping = aes(x = L, y = alpha, fill = effort_norm, z = effort_norm)) +
   geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
   facet_wrap(~patch, ncol = 1) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
@@ -380,7 +364,7 @@ effort_enforcement_cost_heatmap <-
                                ticks.colour = "black")) +
   labs(x = l_legend, y = quote("Enforcement cost ("~alpha~")")) +
   ggtitle(label = "Equilibrium effort in each zone") +
-  plot_theme
+  plot_theme()
 
 lazy_ggsave(plot = effort_enforcement_cost_heatmap,
             filename = "effort_enforcement_cost_heatmap",
@@ -403,15 +387,15 @@ res_1 <- expand_grid(L, w_new) %>%
                             c = c,
                             beta = beta,
                             alpha = alpha,
-                            mu = mu,
                             chi = chi,
+                            mu = mu,
                             years = years,
                             want = "X_vec") / K)
 
 biomass_and_lease <- 
   ggplot(res_1, aes(x = L, y = equil_b, color = w_new, group = w_new)) +
   geom_line() +
-  plot_theme +
+  plot_theme() +
   scale_color_viridis_c() +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
@@ -426,26 +410,26 @@ lazy_ggsave(plot = biomass_and_lease,
 # Harvests
 res_2 <- expand_grid(L, w_new) %>% 
   mutate(equil_H_i = pmap_dbl(.l = list(L = L, w = w_new),
-                            .f = wrapper,
-                            r = r,
-                            K = K,
-                            X0 = X0,
-                            f = f,
-                            p = p,
-                            q = q,
-                            c = c,
-                            beta = beta,
-                            alpha = alpha,
-                            mu = mu,
-                            chi = chi,
-                            years = years,
-                            want = "H_i_vec"))
-  
+                              .f = wrapper,
+                              r = r,
+                              K = K,
+                              X0 = X0,
+                              f = f,
+                              p = p,
+                              q = q,
+                              c = c,
+                              beta = beta,
+                              alpha = alpha,
+                              chi = chi,
+                              mu = mu,
+                              years = years,
+                              want = "H_i_vec"))
+
   
 illegal_harvest_and_lease <- 
   ggplot(res_2, aes(x = L, y = equil_H_i, color = w_new, group = w_new)) +
   geom_line() +
-  plot_theme +
+  plot_theme() +
   scale_color_viridis_c() +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
