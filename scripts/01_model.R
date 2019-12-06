@@ -100,6 +100,15 @@ model <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) {
   }
   #### END FOR LOOP ####
   
+  
+  # Check that equilibrium was reached
+  if(!near(
+    X_vec[i-1],
+    X_vec[i],
+    tol = 0.05 * X_vec[i])) {
+    stop("Error: Equilibrium was not reached!")
+    }
+  
   # Combine all results into a tibble
   results <-
     tibble::tibble(
