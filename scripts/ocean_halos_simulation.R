@@ -74,7 +74,7 @@ res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K)) +
 # Increasing chi doesn't change the pattern, but shifts everything right (increase chi by order of magnitude) 
 # Increasing c by an order of magnitude both increases total biomass and changes the pattern (increasing c order of magnitude)
 
-w_new <- seq(0, 34000, by = 1000)
+w_new <- seq(100, 32000, by = 1000)
 
 # Call the model on each combination of parameters
 res_2 <- expand_grid(L, w_new) %>% 
@@ -373,6 +373,52 @@ lazy_ggsave(plot = effort_enforcement_cost_heatmap,
 
 # SCATTER PLOTS (lines, or whatever)
 
+benchmark <- expand_grid(L, w_new) %>% 
+  mutate(benchmark_equil_b = pmap_dbl(.l = list(L = L, w = w_new),
+                                      .f = wrapper,
+                                      r = r,
+                                      K = K,
+                                      X0 = X0,
+                                      f = f,
+                                      p = p,
+                                      q = q,
+                                      c = c,
+                                      beta = beta,
+                                      alpha = alpha,
+                                      chi = 0,
+                                      mu = mu,
+                                      years = years,
+                                      want = "X_vec") / K,
+         benchmark_equil_Hi = pmap_dbl(.l = list(L = L, w = w_new),
+                                      .f = wrapper,
+                                      r = r,
+                                      K = K,
+                                      X0 = X0,
+                                      f = f,
+                                      p = p,
+                                      q = q,
+                                      c = c,
+                                      beta = beta,
+                                      alpha = alpha,
+                                      chi = 0,
+                                      mu = mu,
+                                      years = years,
+                                      want = "H_i_vec"),
+         benchmark_equil_Ei = pmap_dbl(.l = list(L = L, w = w_new),
+                                       .f = wrapper,
+                                       r = r,
+                                       K = K,
+                                       X0 = X0,
+                                       f = f,
+                                       p = p,
+                                       q = q,
+                                       c = c,
+                                       beta = beta,
+                                       alpha = alpha,
+                                       chi = 0,
+                                       mu = mu,
+                                       years = years,
+                                       want = "E_i_vec"))
 
 
 res_1 <- expand_grid(L, w_new) %>% 
@@ -391,6 +437,21 @@ res_1 <- expand_grid(L, w_new) %>%
                             mu = mu,
                             years = years,
                             want = "X_vec") / K)
+
+combined <- left_join(res_1, benchmark, by = c("L", "w_new")) %>% 
+  mutate(equil_b = equil_b * K,
+         benchmark_equil_b = benchmark_equil_b * K,
+         equil_b_rel = (equil_b - benchmark_equil_b) / benchmark_equil_b)
+
+ggplot(combined, aes(x = L, y = equil_b_rel, color = w_new, group = w_new)) +
+  geom_line() +
+  plot_theme() +
+  scale_color_viridis_c() +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
+                                frame.colour = "black",
+                                ticks.colour = "black")) +
+  labs(x = l_legend, y = b_legend)
 
 biomass_and_lease <- 
   ggplot(res_1, aes(x = L, y = equil_b, color = w_new, group = w_new)) +
@@ -423,7 +484,7 @@ res_2 <- expand_grid(L, w_new) %>%
                               chi = chi,
                               mu = mu,
                               years = years,
-                              want = "H_i_vec"))
+                              want = "H_i_vec") / K)
 
   
 illegal_harvest_and_lease <- 

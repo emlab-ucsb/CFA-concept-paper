@@ -57,12 +57,12 @@ $$ H_F = qE_FX_F $$
 
 Harvest from fishing in patch $R$ is the sum of harvest in the lease area ($H_L$), harvest from illegal fishing in the no-take area, and harvest from illegal fishing in the lease area: 
 
-$$ H_R = H_L + H_{I_N} + H_{I_L} = qE_LX_RL + qE_IX_R(1-L) + qE_{I_L}X_RL(1-qE_L)$$
+$$ H_R = H_L + H_{I,N} + H_{I,L} = qE_LX_RL + qE_IX_R(1-L) + qE_{I,L}X_RL(1-qE_L)$$
 
 Total harvest is therefore given by: 
 $$ \overline{H} = H_F + H_R  $$
 
-Within each patch, $i$, the stock grows logistically according to the Gordon-Schaefer model such that growth depends on the total initial biomass in that patch in time $t$ ($\overline{X}_{i,t}$), the intrinsic growth rate of the stock ($r$), and the environmental saturation level or carrying capacity ($K_i$), expressed as maximum equilibrium biomass that patch can hold. Growth in patch $i$ in time $t$ is therefore given by: 
+Within each patch, $i$, the stock grows logistically according to the Gordon-Schaefer model such that growth depends on the total initial biomass in that patch in time $t$ ($\overline{X}_{i,t}$), the intrinsic growth rate of the stock ($r$), and the environmental saturation level or carrying capacity ($K_i$), expressed as maximum equilibrium biomass that a patch can hold. In principle, this can be patch-specific but we assume that it is constant through time and equal across space. Growth in patch $i$ in time $t$ is therefore given by: 
 
 $$ g(X_{i,t}) = X_{i,t} + rX_{i,t}\bigg(1-\frac{X_{i,t}}{K_i} \bigg) - H_{i,t}$$
 
@@ -74,7 +74,7 @@ d_{F,F} & d_{F,R} \\
 d_{R,F} & d_{R,R}
 \end{array}\right]$$
 
-where $d_{F,F}$ is the fraction of the stock from patch $F$ that remains in patch $F$, $d_{F,R}$ is the fraction of the stock from patch $F$ that redistributes to patch $R$, $d_{R,F}$ is the fraction of the stock in patch $R$ that redistributes to patch $F$, and $d_{R,R}$ is the fraction of the stock in patch $R$ that remains in patch $R$. $d_{F,F} + d_{F,R} = 1$ and $d_{R,R} + d_{R,F} = 1$.
+where $d_{F,F}$ is the fraction of the stock from patch $F$ that remains in patch $F$ (*i.e.* self-recruitment) and $d_{F,R}$ is the fraction of the stock from patch $F$ that redistributes to patch $R$ (*i.e.* spillover). Similarly, $d_{R,F}$ is the fraction of the stock in patch $R$ that redistributes to patch $F$ and $d_{R,R}$ is the fraction of the stock in patch $R$ that remains in patch $R$. $d_{F,F} + d_{F,R} = 1$ and $d_{R,R} + d_{R,F} = 1$.
 
 Biomass in patch $F$ in time $t+1$ is therefore given by: 
 
@@ -96,7 +96,7 @@ $$X_{F, t+1} = (1-f)\overline{X}_{t+1} $$
 
 ### Enforcement dynamics
 
-Enforcement in patch $R$ reduces illegal fishing. The cost of enforcement (C_E) is given by $\alpha E_E$, where $\alpha$ is a cost coefficient and $E_E$ is enforcement effort (days). The cost of enforcement is generally covered by exogenous funding (i.e. CE is given), where available funding dictates the level of enforcement effort.  Here we consider an alternative funding-model, where enforcement effort depends on access revenue generated from the lease area and fines from vessels caught fishing illegally in the reserve: 
+Enforcement in patch $R$ reduces illegal fishing. The cost of enforcement ($C_E$) is given by $\alpha E_E$, where $\alpha$ is a cost coefficient and $E_E$ is enforcement effort (days). In other models, the cost of enforcement is generally covered by an exogenous budget (*i.e.* $C_E$ is given), where available funding dictates the level of enforcement effort. Here we consider an alternative funding-model, where enforcement effort depends on access revenue generated from the lease area and fines from vessels caught fishing illegally in the reserve: 
 
 $$E_E = \frac{\chi E_L + \theta \psi (E_{I_N}+E_{I_L})}{\alpha} $$ 
 
@@ -108,7 +108,7 @@ where $\mu$ is the enforcement coefficient which dictates how fast the probabili
 
 ## Analytical Solution? Equilibrium biomass as a function of lease-area size
 
-**Matt - this is where we would love your help. It seems like it could be possible to analytically solve for biomass as a function of $L$ with some simplifications to the above model. However, we get slightly stuck. Here's what we tried so far... We assume here that a constant fraction of total biomass redistributes each time step between the two patches and that the probability of detection is constant**
+**Matt - this is where we would love your help. It seems like it could be possible to analytically solve for equilibrium biomass as a function of $L$ with some simplifications to the above model. However, we get slightly stuck. Here's what we tried so far... We assume here that a constant fraction of total biomass redistributes each time step between the two patches and that the probability of detection is constant**
 
 In equilibrium, we assume that total biomass must be unchanging. Thus, $\overline{X}_{t+1} = \overline{X}_{t} = \overline{X}^*$. Solving for the steady state harvest then yields: 
 
@@ -124,15 +124,15 @@ $$ qE_F^*\overline{X^*}(f-1) + qE_L^*\overline{X^*}fL + qE_{I_N}^*\overline{X^*}
 Simplifying and substituting in each of our equilibrium efforts written in terms of total biomass then gives
 
 $$ (1-f)\bigg(\frac{pq\overline{X^*}(1-f)}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
-fL\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
+fL\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} + \\
 f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} +
-fL\bigg(\frac{pq\overline{X^*}fL - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} \bigg(1-\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}}\bigg) +
+fL\bigg(\frac{pq\overline{X^*}fL - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} +\\ \bigg(1-\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}}\bigg)
 = \frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 
-** Matt: We then went on to try to solve this using the implicit function theorum ($\frac{d X}{d L} = \frac{\partial/\partial X}{\partial/\partial L}$), and it got very messy very quickly. Is there a better way? **
+**Matt: We then went on to try to solve this using the implicit function theorum ($\frac{d X}{d L} = \frac{\partial/\partial X}{\partial/\partial L}$), and it got very messy very quickly. Is there a better way?**
 
 
-```{r}
+```{r, echo = F, eval = F}
 
 source(here::here("scripts", "03_default_parameters.R"))
 

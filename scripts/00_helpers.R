@@ -10,6 +10,7 @@
 # with all state variables through time
 fast_check <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) {
   model(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) %>% 
+    mutate_at(.vars = vars(X_r_vec, X_f_vec, X_vec), .funs =  ~ . / K) %>% 
     gather(variable, value, - time) %>% 
     ggplot(aes(x = time, y = value)) +
     geom_line() +
@@ -20,24 +21,6 @@ fast_check <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) 
 
 #### FIGURE STUFF ####
 # Plot theme function
-
-text_size <- 10
-title_size <- 12
-
-plot_theme <- theme_bw() +
-  theme(text = element_text(size = text_size),
-        plot.title = element_text(size = title_size),
-        rect = element_rect(fill = "transparent",
-                            colour = NA,
-                            color = NA,
-                            size = 0,
-                            linetype = 0),
-        legend.background = element_blank(),
-        legend.key = element_blank(),
-        strip.background = element_blank())
-
-
-
 
 plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
   
