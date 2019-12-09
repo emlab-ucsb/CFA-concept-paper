@@ -40,7 +40,7 @@
 # 
 ################################################################
 
-model <- function(r, K_r, K_f, X0_r, X0_f, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
+model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
   # Define vectors to store state variables through time
   X_vec <-
     X_r_vec <-
@@ -56,9 +56,11 @@ model <- function(r, K_r, K_f, X0_r, X0_f, D, p, q, c, beta, L, alpha, mu, w, ch
     H_f_vec <- numeric(length = years)
   
   
-  X_now_r <- X0_r                           # Initial biomass in reserve
-  X_now_f <- X0_f                          # Initial biomass in fishing area
+  X_now_r <- X0/2                           # Initial biomass in reserve
+  X_now_f <- X0/2                          # Initial biomass in fishing area
   time <- seq_len(years)                # Create vector of time
+  
+  K_new <- K/2
   
   #### Wild assumption 1: Initial budget depends on access fee revenues only
   E_i <- 0
@@ -90,8 +92,8 @@ model <- function(r, K_r, K_f, X0_r, X0_f, D, p, q, c, beta, L, alpha, mu, w, ch
     H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
     
     # Growth in each area
-    X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_f))) - H_f                                                            # Gordon-Schafer
-    X_growth_r <- X_r + (X_r * r * (1 - (X_r / K_r))) - H_r                                                            # Gordon-Schafer
+    X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_new))) - H_f                                                            # Gordon-Schafer
+    X_growth_r <- X_r + (X_r * r * (1 - (X_r / K_new))) - H_r                                                            # Gordon-Schafer
     
     X_next_f <- (X_growth_f * D[1,1]) + (X_growth_r * D[1,2])                                                      
     X_next_r <- (X_growth_r * D[2,2]) + (X_growth_f * D[2,1])                                                              

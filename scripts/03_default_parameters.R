@@ -8,7 +8,7 @@
 r <- 0.57                 # *Growth rate
 K <- 6.876526e6           # *Carrying capacity (tons)
 X0 <- 3.507028e6          # *Initial biomass (tons)
-f <- 0.5                  # *Dispersal between patches
+D <- matrix(c(0.2, 0.8, 0.7, 0.3), nrow = 2, ncol = 2, byrow = T)                 # *Dispersal between patches
 
 ## Econ
 p <- 1200                 # *Price (USD / ton)

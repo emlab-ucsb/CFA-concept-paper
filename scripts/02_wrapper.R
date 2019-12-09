@@ -8,10 +8,10 @@
 # 
 ################################################################
 
-wrapper <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years, want = "X_vec"){
+wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, want = "X_vec"){
   
   value <- 
-    model(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
+    model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
     filter(time == max(time)) %>%                                          # keep biomass in the last timestep only
     pull({{want}})                                                         # return desired variable
   
