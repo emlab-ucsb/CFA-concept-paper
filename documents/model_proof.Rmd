@@ -9,13 +9,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tinytex)
 ```
 
-## Model description
+## Bioeconomic model
 
-We use a two-patch discrete-time meta population bioeconomic model to illustrate the interactions between enforcement, illegal fishing, and revenue generated from MPA spillover in a reserve system. Our system is divided into two patches, where patch $F$ is the general fishing area and patch $R$ is the reserve. Vessels do not need to pay in order to fish in $F$, and the fishing effort in this patch is assumed to be in open-access. Some fraction, $L$, of the patch R can be designated as a lease area, where vessels must pay an access fee in order to fish. The remaining fraction, $N$, is designated as a no-take area ($N = 1-L$). Fishing effort in the lease area is driven by biomass available for harvest and the per-unit-effort access fee for fishing. We also assume that illegal fishing occurs in the reserve, which is driven by biomass in the reserve and the per-unit-effort expected fine associated with being caught fishing illegally. The stock of fish in each area is stationary within a single year, but dispersal between the patches occurs at the beginning of each time step. 
+We use a two-patch discrete-time meta population bioeconomic model to illustrate the interactions between enforcement, illegal fishing, and revenue generated from MPA spillover in a reserve system. Our system is divided into two patches, where patch $F$ is the general fishing area and patch $R$ is the reserve. Vessels do not need to pay in order to fish in patch $F$, and the fishing effort in this patch is assumed to be in open-access. Some fraction, $L$, of patch R can be designated as a lease area, where vessels must pay a per-unit-effort access fee in order to fish. The remaining fraction, $1-L$, is designated as a no-take area. Fishing effort in the lease area is driven by biomass available for harvest and the per-unit-effort access fee for fishing. We also assume that illegal fishing occurs in the reserve, which is driven by biomass in the reserve and the per-unit-effort expected fine associated with being caught fishing illegally. The stock of fish in each area is stationary within a single year, but dispersal between the patches occurs at the beginning of each time step. 
 
-## Analytical proof
-
-### Fishery Dynamics
+### Fishery dynamics
 
 Revenue for vessels in patch $F$ is given by $pqE_FX_F$ where $p$ the price of fish, $q$ is catchability, $E_F$ is fishing effort (days) in patch $F$, and $X_F$ is stock size. The cost of fishing for vessels in patch $F$ is given by $cE_F$, where c is the variable cost of fishing, and $\beta = 1.3$ matches commonly used cost-coefficients (values of $\beta > 1$ imply that additional units of effort are increasingly costly to apply). Profits from fishing in patch $F$ are given by: 
 
@@ -23,70 +21,117 @@ $$ \Pi_F(E_F, X_F) = pqE_FX_F - cE_F^\beta $$
 
 In patch $R$, in the absence of a lease area, the only revenue for vessels comes from illegal fishing. This revenue is given by $pqE_IX_R$, where $E_I$ is illegal fishing effort (days) and $X_R$ is stock size. The cost of illegally fishing in patch $R$ is given by $cE_I^\beta + \theta E_I \psi$, where $\theta$ is the probability of detecting each unit of illegal fishing effort and $\psi$ is the per-unit-effort fine. Together $\theta \psi$ is the per-unit-effort expected fine for fishing illegally. 
 
-If some fraction of the reserve, $L$, is designated as a lease area, revenue for vessels fishing in the lease area is given by $pqE_FX_RL$. The cost of fishing in the lease area is given by $cE_L + \chi E_L$, where $\chi$ is the per-unit-effort access fee. The parameterization of lease area size implies that profit from fishing in the lease area is given by: 
+If some fraction of the reserve, $L$, is designated as a lease area, revenue for vessels paying to fish in the lease area is given by $pqE_FX_RL$. The cost of fishing in the lease area is given by $cE_L + \chi E_L$, where $\chi$ is the per-unit-effort access fee. The parameterization of lease area size implies that profit from fishing in the lease area is given by: 
 
 $$ \Pi_L(E_L, X_R, L) = pqE_LX_RL - cE_L^\beta - \chi E_L $$
 
-Upon implementation of a lease area, we assume that vessels fishing in the lease area will self enforce, and illegal fishing therefore only persists in the no-take area of the reserve. The profit from fishing illegally in the reserve can then be generalized to: 
+Upon implementation of a lease area, we make the distinction between illegal fishing in the no-take area of the reserve, and illegal fishing in the lease area. Profits from illegal fishing in the no-take area of the reserve are given by: 
 
-$$\Pi_I(E_I, X_R, L) = pqE_IX_R(1-L) - cE_I^\beta - \theta E_I\psi $$
+$$\Pi_{I_N}(E_{I_N}, X_R, L) = pqE_{I_N}X_R(1-L) - cE_{I_N}^\beta - \theta E_{I_N}\psi $$
+
+In practice, it is feasible that vessels paying to fish in the lease area could self-enforce, and ultimately deter illegal fishing in this area. However, we assume that some level of illegal fishing persists in the lease area, driven by the size of the per-unit-effort expected fine, and the amount of biomass left in the lease area after the legal fishing has occured. Therefore profits from illegal fishing in the lease area are given by:
+
+$$\Pi_{I_L}(E_{I_L}, X_R, L) = pqE_{I_L}X_RL(1 - qE_L) - cE_{I_L}^\beta - \theta E_{I_L}\psi $$
 
 We can derive the marginal profits for fishing in each area by taking the derivatives of the equations above:
 
 $$ \pi_F(E_F) = \frac{\partial \Pi_F}{\partial E_F} = pqX_F -\beta cE_F^{\beta -1} $$
 
 $$ \pi_L(E_L) = \frac{\partial \Pi_L}{\partial E_L} = pqX_RL -\beta cE_L^{\beta -1} - \chi $$
-$$ \pi_I(E_I) = \frac{\partial \Pi_I}{\partial E_I} = pqX_R(1-L) -\beta cE_I^{\beta -1} - \theta \psi $$ 
+$$ \pi_{I_N}(E_{I_N}) = \frac{\partial \Pi_{I_N}}{\partial E_{I_N}} = pqX_R(1-L) -\beta cE_{I_N}^{\beta -1} - \theta \psi $$ 
+
+$$ \pi_{I_L}(E_{I_L}) = \frac{\partial \Pi_{I_L}}{\partial E_{I_L}} = pqX_RL(1-qE_L) -\beta cE_{I_L}^{\beta -1} - \theta \psi $$ 
 					
-Assuming that effort will continue to enter each area until the profit from the last unit of effort is exactly zero, we can solve for equilibrium effort in each a rea: 
+Assuming that effort will continue to enter each area until the profit from the last unit of effort is exactly zero, we can then solve for equilibrium effort in each area: 
 
 $$ E_F^* = \bigg(\frac{pqX_F}{\beta c} \bigg)^{\frac{1}{\beta-1}} $$
 $$ E_L^* = \bigg(\frac{pqX_RL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} $$
-$$ E_I^* = \bigg(\frac{pqX_R(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} $$
+$$ E_{I_N}^* = \bigg(\frac{pqX_R(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} $$
+$$ E_{I_L}^* = \bigg(\frac{pqX_RL(1-qE_L^*) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} $$
 
-### Stock Dynamics
+### Stock dynamics
 
-Harvest in each area is determined by fishing effort and stock size. Harvest from fishing in patch $F$ ($H_F$) is given by $qE_FX_F$, harvest from fishing in the lease area ($H_L$) is given by  $qE_LX_RL$, and harvest from illegal fishing in the reserve ($H_I$) is given by $qE_IX_R(1-L)$. Therefore, total harvest is given by: 
+Harvest in each area is determined by fishing effort and stock size. Harvest from fishing in patch $F$ is given by:
 
-$$ \overline{H}(E_F,E_L, E_I, X_F,X_R, L) = H_F + H_L + H_I = qE_FX_F + qE_LX_RL + qE_IX_R(1-L) $$
+$$ H_F = qE_FX_F $$
 
-The stock grows logistically according to the Gordon-Schaefer model such that growth depends on the total initial biomass in time $t$ ($\overline{X}_t$), the intrinsic growth rate of the stock ($r$), and the environmental saturation level or carrying capacity ($K$), expressed as maximum equilibrium biomass the environment can hold:
+Harvest from fishing in patch $R$ is the sum of harvest in the lease area ($H_L$), harvest from illegal fishing in the no-take area, and harvest from illegal fishing in the lease area: 
 
+$$ H_R = H_L + H_{I_N} + H_{I_L} = qE_LX_RL + qE_IX_R(1-L) + qE_{I_L}X_RL(1-qE_L)$$
 
-The total initial biomass in time $t$ in our model is given by $X_{t,F} + X_{t,R}$. Therefore total biomass in time $t+1$ is: 
+Total harvest is therefore given by: 
+$$ \overline{H} = H_F + H_R  $$
 
+Within each patch, $i$, the stock grows logistically according to the Gordon-Schaefer model such that growth depends on the total initial biomass in that patch in time $t$ ($\overline{X}_{i,t}$), the intrinsic growth rate of the stock ($r$), and the environmental saturation level or carrying capacity ($K_i$), expressed as maximum equilibrium biomass that patch can hold. Growth in patch $i$ in time $t$ is therefore given by: 
+
+$$ g(X_{i,t}) = X_{i,t} + rX_{i,t}\bigg(1-\frac{X_{i,t}}{K_i} \bigg) - H_{i,t}$$
+
+In each time step, the stock in each patch redistributes according to the following dispersal matrix: 
+
+$$D = \left[\begin{array}
+{rr}
+d_{F,F} & d_{F,R} \\
+d_{R,F} & d_{R,R}
+\end{array}\right]$$
+
+where $d_{F,F}$ is the fraction of the stock from patch $F$ that remains in patch $F$, $d_{F,R}$ is the fraction of the stock from patch $F$ that redistributes to patch $R$, $d_{R,F}$ is the fraction of the stock in patch $R$ that redistributes to patch $F$, and $d_{R,R}$ is the fraction of the stock in patch $R$ that remains in patch $R$. $d_{F,F} + d_{F,R} = 1$ and $d_{R,R} + d_{R,F} = 1$.
+
+Biomass in patch $F$ in time $t+1$ is therefore given by: 
+
+$$ X_{F,t+1} = d_{F,F} *g(X_{F,t}) + d_{R,F} *g(X_{R,t}) $$
+
+Similarly, biomass in patch $R$ in time $t+1$ is given by: 
+$$ X_{R,t+1} = d_{R,R} *g(X_{R,t}) + d_{F,R} *g(X_{F,t}) $$
+
+#### Alternative option for dispersal
+
+The entire stock grows together: 
 $$ \overline{X}_{t+1} = \overline{X}_t + r\overline{X}_{t} \bigg(1-\frac{\overline{X}_t}{K} \bigg) - \overline{H}_t $$
 
 After the stock grows, a constant fraction, $f$, of the total stock redistributes to the reserve, and the remainder ($1-f$) redistributes to the general fishing area. Thus biomass in time period $t+1$ in the reserve and in the fishing area respectively are given by:
 
-$$X_{t+1,R} = f\overline{X}_{t+1} $$
+$$X_{R,t+1} = f\overline{X}_{t+1} $$
 
-$$X_{t+1,F} = (1-f)\overline{X}_{t+1} $$
-## Equilibrium biomass as a function of lease-area size
+$$X_{F, t+1} = (1-f)\overline{X}_{t+1} $$
+
+### Enforcement dynamics
+
+Enforcement in patch $R$ reduces illegal fishing. The cost of enforcement (C_E) is given by $\alpha E_E$, where $\alpha$ is a cost coefficient and $E_E$ is enforcement effort (days). The cost of enforcement is generally covered by exogenous funding (i.e. CE is given), where available funding dictates the level of enforcement effort.  Here we consider an alternative funding-model, where enforcement effort depends on access revenue generated from the lease area and fines from vessels caught fishing illegally in the reserve: 
+
+$$E_E = \frac{\chi E_L + \theta \psi (E_{I_N}+E_{I_L})}{\alpha} $$ 
+
+The relationship between enforcement effort and the probability of detecting illegal fishing activity is also dynamic. With each additional unit of enforcement effort, the probability of any given unit of fishing effort getting caught changes according to: 
+
+$$\theta (E_E) = 1-e^{-\mu E_E} $$
+
+where $\mu$ is the enforcement coefficient which dictates how fast the probability of getting caught changes with respect to enforcement effort. $\mu$ can also be thought of as a scaling of reserve size; in smaller reserves perfect enforcement can rapidly be achieved with the first few units of enforcement effort, while in larger reserves it takes many more units of enforcement effort to achieve perfect enforcement.
+
+## Analytical Solution? Equilibrium biomass as a function of lease-area size
+
+**Matt - this is where we would love your help. It seems like it could be possible to analytically solve for biomass as a function of $L$ with some simplifications to the above model. However, we get slightly stuck. Here's what we tried so far... We assume here that a constant fraction of total biomass redistributes each time step between the two patches and that the probability of detection is constant**
 
 In equilibrium, we assume that total biomass must be unchanging. Thus, $\overline{X}_{t+1} = \overline{X}_{t} = \overline{X}^*$. Solving for the steady state harvest then yields: 
 
 $$ \overline{H^*} = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 
-Since total harvest is equal to the sum of the harvests in the three areas, we can rewrite this as
+Since total harvest is equal to the sum of all harvests, we can rewrite this as
 
-$$ qE_F^*X_F^* + qE_L^*X_R^*L + qE_I^*X_R^*(1-L) = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
+$$ qE_F^*X_F^* + qE_L^*X_R^*L + qE_{I_N}^*X_R^*(1-L) + qE_{I_L}^*X_R^*L(1-qE_L^*) = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 
 Substituting for biomass in each area in terms of total biomass, we then get
 
-$$ qE_F^*\overline{X^*}(f-1) + qE_L^*\overline{X^*}fL + qE_I^*\overline{X^*}f(1-L) = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
+$$ qE_F^*\overline{X^*}(f-1) + qE_L^*\overline{X^*}fL + qE_{I_N}^*\overline{X^*}f(1-L) + qE_{I_L}^*\overline{X^*}fL(1-qE_L^*) = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 Simplifying and substituting in each of our equilibrium efforts written in terms of total biomass then gives
 
 $$ (1-f)\bigg(\frac{pq\overline{X^*}(1-f)}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
 fL\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
-f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} 
+f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} +
+fL\bigg(\frac{pq\overline{X^*}fL - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} \bigg(1-\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}}\bigg) +
 = \frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 
-We can set this equal to 0: 
+** Matt: We then went on to try to solve this using the implicit function theorum ($\frac{d X}{d L} = \frac{\partial/\partial X}{\partial/\partial L}$), and it got very messy very quickly. Is there a better way? **
 
-$$ (1-f)\bigg(\frac{pq\overline{X^*}(1-f)}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
-fL\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
-f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} -
-\frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)
-= 0$$
 
+## Simulations
+
+### Model parameterization
