@@ -123,11 +123,15 @@ Substituting for biomass in each area in terms of total biomass, we then get
 $$ qE_F^*\overline{X^*}(f-1) + qE_L^*\overline{X^*}fL + qE_{I_N}^*\overline{X^*}f(1-L) + qE_{I_L}^*\overline{X^*}fL(1-qE_L^*) = r\overline{X^*} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
 Simplifying and substituting in each of our equilibrium efforts written in terms of total biomass then gives
 
-$$ (1-f)\bigg(\frac{pq\overline{X^*}(1-f)}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
+$$
+\begin{split}
+(1-f)\bigg(\frac{pq\overline{X^*}(1-f)}{\beta c} \bigg)^{\frac{1}{\beta-1}} + 
 fL\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}} + \\
 f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} +
 fL\bigg(\frac{pq\overline{X^*}fL - \theta\psi}{\beta c} \bigg)^{\frac{1}{\beta-1}} +\\ \bigg(1-\bigg(\frac{pq\overline{X^*}fL - \chi}{\beta c} \bigg)^{\frac{1}{\beta-1}}\bigg)
-= \frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)$$
+= \frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)
+\end{split}
+$$
 
 **Matt: We then went on to try to solve this using the implicit function theorum ($\frac{d X}{d L} = \frac{\partial/\partial X}{\partial/\partial L}$), and it got very messy very quickly. Is there a better way?**
 
@@ -160,7 +164,7 @@ d4 <- -a* (f ^ 2) * (1 - L) * x * z * (((a * f * (1 - L) * x) - (theta * w)) ^ (
 
 ```
 
-=======
+
 ## Simulations
 
 ### Model parameterization
