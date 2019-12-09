@@ -24,12 +24,14 @@
 # the following:
 # 
 # r - intrinsic growth rate
-# K - carrying capacity (tones)
-# X0 - initial population size (tones)
-# f - fraction of total biomass contained in the reserve
+# K_R - carrying capacity (tones) for the reserve
+# K_F - carrying capacity (tones) for the general fishing area
+# X0_R - initial population size (tones) for the reserve
+# X0_F - initial population size (tones) for the reserve
+# D - dispersal matrix 
 # p - price of fish (USD / ton)
 # c - cost of fishing (USD / effort)
-# beta - cost scaling (usuallu 1.3)
+# beta - cost scaling (usually 1.3)
 # L - fraction of the reserve as a lease zone
 # alpha - cost of enforcement (USD / effort)
 # mu - enforcement efficiency
@@ -38,21 +40,24 @@
 # 
 ################################################################
 
-model <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) {
+model <- function(r, K_r, K_f, X0_r, X0_f, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
   # Define vectors to store state variables through time
   X_vec <-
     X_r_vec <-
     X_f_vec <-
-    E_i_vec <-
+    E_in_vec <-
+    E_il_vec <-
     E_l_vec <- 
     E_f_vec <- 
     E_e_vec <- 
-    H_i_vec <- 
+    H_in_vec <- 
+    H_il_vec <- 
     H_l_vec <- 
     H_f_vec <- numeric(length = years)
   
   
-  X_now <- X0                           # Initial biomass
+  X_now_r <- X0_r                           # Initial biomass in reserve
+  X_now_f <- X0_f                          # Initial biomass in fishing area
   time <- seq_len(years)                # Create vector of time
   
   #### Wild assumption 1: Initial budget depends on access fee revenues only
@@ -63,40 +68,51 @@ model <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) {
   for (i in time) {
     
     # Biomass dispersal
-    X <- X_now
-    X_r <- f * X
-    X_f <- (1 - f) * X
+    X_r <- X_now_r
+    X_f <- X_now_f
+    X_tot <- X_r + X_f
     
     # Selection of effort
-    E_f <- max(((p * q * X_f) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                            # Fishing effort in fishing zone
-    E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                # Fishing effort inlease zone
-    E_e <- ((E_l * chi) + (theta * w * E_i)) / alpha                                                     # Enforcement effort given budget
-    theta <- 1 - exp(-mu * E_e)                                                                          # Probability of detection given enforcement
-    E_i <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort
+    E_f <- max(((p * q * X_f) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                             # Fishing effort in fishing zone
+    E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                 # Legal fishing effort in lease zone
+    E_e <- ((E_l * chi) + (theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
+    theta <- 1 - exp(-mu * E_e)                                                                           # Probability of detection given enforcement
+    E_in <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort in no-take
+    E_il <- max((((p * q * X_r * L *(1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)   # Illegal fishing effort in lease area
+    
+    E_i <- E_in + E_il # Total illegal effort
     
     # Harvest
     H_f <- q * X_f * E_f                                                                                 # Harvest in fishing zone
-    H_l <- q * X_r * L * E_l                                                                             # Harvest in lease zone
-    H_i <- q * X_r * (1 - L) * E_i                                                                       # Illegal harvest
-    H <- H_f + H_l + H_i                                                                                 # Total harvest
+    H_l <- q * X_r * L * E_l                                                                             # Legal harvest in lease zone
+    H_in <- q * X_r * (1 - L) * E_in                                                                     # Illegal harvest in no-take
+    H_il <- q * X_r * L * E_il                                                                           # Illegal harvest in lease area
+    H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
     
-    # Growth
-    X_next <- X + (X * r * (1 - (X / K))) - H                                                            # Gordon-Schafer
+    # Growth in each area
+    X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_f))) - H_f                                                            # Gordon-Schafer
+    X_growth_r <- X_r + (X_r * r * (1 - (X_r / K_r))) - H_r                                                            # Gordon-Schafer
+    
+    X_next_f <- (X_growth_f * D[1,1]) + (X_growth_r * D[1,2])                                                      
+    X_next_r <- (X_growth_r * D[2,2]) + (X_growth_f * D[2,1])                                                              
     
     # Track state variables
-    X_vec[i] <- X_now
+    X_vec[i] <- X_tot
     X_r_vec[i] <- X_r
     X_f_vec[i] <- X_f
-    E_i_vec[i] <- E_i
+    E_in_vec[i] <- E_in
+    E_il_vec[i] <- E_il
     E_l_vec[i] <- E_l 
     E_f_vec[i] <- E_f 
     E_e_vec[i] <- E_e 
-    H_i_vec[i] <- H_i 
+    H_in_vec[i] <- H_in 
+    H_il_vec[i] <- H_il 
     H_l_vec[i] <- H_l 
     H_f_vec[i] <- H_f
     
     
-    X_now <- X_next                                                                                      # Update biomass for next iteration
+    X_now_r <- X_next_r                                                                                      # Update biomass for next iteration
+    X_now_f <- X_next_f
   }
   #### END FOR LOOP ####
   
@@ -116,11 +132,13 @@ model <- function(r, K, X0, f, p, q, c, beta, L, alpha, mu, w, chi, years) {
       X_vec,
       X_r_vec,
       X_f_vec,
-      E_i_vec,
+      E_in_vec,
+      E_il_vec,
       E_l_vec,
       E_f_vec,
       E_e_vec,
-      H_i_vec,
+      H_in_vec,
+      H_il_vec,
       H_l_vec,
       H_f_vec
     )
