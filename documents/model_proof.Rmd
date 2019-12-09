@@ -90,3 +90,32 @@ f(1-L)\bigg(\frac{pq\overline{X^*}f(1-L) - \theta\psi}{\beta c} \bigg)^{\frac{1}
 \frac{r}{q} \bigg(1-\frac{\overline{X^*}}{K} \bigg)
 = 0$$
 
+
+```{r}
+
+source(here::here("scripts", "03_default_parameters.R"))
+
+a <- p * q
+z <- 1 / (beta - 1)
+
+x <- X0
+theta <- 0.95
+
+L <- 0.9
+
+n1 <- a * (f ^ 2) * (L ^ 2) * z * ((a * f * L * x - chi) ^ (z - 1))
+n2 <- a * (f ^ 2) * ((1 - L) ^ 2) * z  * (((a * f * (1 - L) * x) - (theta * w)) ^ (z - 1))
+n3 <- a * ((1 - f) ^ 2) * z * ((a * (1 - f) * x) ^ (z - 1))
+n4 <- (1 / (q * K)) * ((beta * c) ^ z)
+
+d1 <- f * (((a * f * L * x) - chi) ^ z)
+d2 <- a * (f ^ 2) * L * x * z * (((a * f * L * x) - chi) ^ (z - 1))
+d3 <- -f * (((a * f * (1 - L) * x) - (theta * w)) ^ (z))
+d4 <- -a* (f ^ 2) * (1 - L) * x * z * (((a * f * (1 - L) * x) - (theta * w)) ^ (z - 1))
+
+
+
+(n1 + n2 + n3 + n4) / (d1 + d2 + d3 + d4)
+
+```
+
