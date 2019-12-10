@@ -70,7 +70,7 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, toler
   #### BEGIN FOR LOOP ####
   for (i in time) {
     
-    # Biomass dispersal
+    # Biomass in each patch
     X_r <- X_now_r
     X_f <- X_now_f
     X_tot <- X_r + X_f
@@ -81,7 +81,7 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, toler
     E_e <- ((E_l * chi) + (theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
     theta <- 1 - exp(-mu * E_e)                                                                           # Probability of detection given enforcement
     E_in <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort in no-take
-    E_il <- max((((p * q * X_r * L *(1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)   # Illegal fishing effort in lease area
+    E_il <- max((((p * q * X_r * L * (1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)   # Illegal fishing effort in lease area
     
     E_i <- E_in + E_il # Total illegal effort
     
@@ -89,7 +89,7 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, toler
     H_f <- q * X_f * E_f                                                                                 # Harvest in fishing zone
     H_l <- q * X_r * L * E_l                                                                             # Legal harvest in lease zone
     H_in <- q * X_r * (1 - L) * E_in                                                                     # Illegal harvest in no-take
-    H_il <- q * X_r * L * E_il                                                                           # Illegal harvest in lease area
+    H_il <- q * X_r * L * (1 - (q * E_l)) * E_il                                                         # Illegal harvest in lease area
     H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
     
     # Growth in each area
