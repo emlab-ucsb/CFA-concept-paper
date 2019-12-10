@@ -32,7 +32,7 @@ e_legend <- "Equilibrium\neffort"
 
 # HEAT MAPS
 
-L <- seq(0.1, 1, length.out = 10)
+L <- seq(0.1, 1, length.out = 50)
 
 # Biomass heat maps here
 
@@ -41,7 +41,7 @@ L <- seq(0.1, 1, length.out = 10)
 # Changing chi and running this shifts the pattern right (optimal L shifts from ~0.5 to ~ 0.58 if chi increases by an order of magnitude)
 # Changine c and running this changes the pattern slightly (increasing c by 5-30x)
 
-mu_new <- seq(0.0001, 0.01, by = 0.0002)
+mu_new <- seq(0.00005, 0.01, by = 0.0002)
 
 # Call the model on each combination of parameters
 res_1 <- expand_grid(L, mu_new) %>% 
@@ -62,11 +62,15 @@ res_1 <- expand_grid(L, mu_new) %>%
                             want = "X_vec"))
 
 
-res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K)) +
+res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K, z = equil_b)) +
   geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Enforcement coefficient, "*mu)) +
-  scale_fill_viridis_c(name = b_legend) +
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
   plot_theme()
 
 # 2) fine vs L
@@ -95,17 +99,21 @@ res_2 <- expand_grid(L, w_new) %>%
                             want = "X_vec"))
 
 
-res_2_plot <- ggplot(res_2, aes(x = L, y = w_new, fill = equil_b / K)) +
+res_2_plot <- ggplot(res_2, aes(x = L, y = w_new, fill = equil_b / K, z = equil_b)) +
   geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Fine, "*psi)) +
-  scale_fill_viridis_c(name = b_legend) +
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
   plot_theme()
 
 
 # 3) access fee vs L
 
-chi_new <- seq(1, 20000, by = 500)
+chi_new <- seq(1, 30000, by = 500)
 
 # Call the model on each combination of parameters
 res_3 <- expand_grid(L, chi_new) %>% 
@@ -126,16 +134,20 @@ res_3 <- expand_grid(L, chi_new) %>%
                             want = "X_vec"))
 
 
-res_3_plot <- ggplot(res_3, aes(x = L, y = chi_new, fill = equil_b / K)) +
+res_3_plot <- ggplot(res_3, aes(x = L, y = chi_new, fill = equil_b / K, z = equil_b)) +
   geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Access fee, "*chi)) +
-  scale_fill_viridis_c(name = b_legend) +
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
   plot_theme()
 
 # 4) cost vs L
 
-alpha_new <- seq(100, 10000, by = 100)
+alpha_new <- seq(10, 50000, by = 1000)
 
 # Call the model on each combination of parameters
 res_4 <- expand_grid(L, alpha_new) %>% 
@@ -156,11 +168,15 @@ res_4 <- expand_grid(L, alpha_new) %>%
                             want = "X_vec"))
 
 
-res_4_plot <- ggplot(res_4, aes(x = L, y = alpha_new, fill = equil_b / K)) +
+res_4_plot <- ggplot(res_4, aes(x = L, y = alpha_new, fill = equil_b / K, z = equil_b)) +
   geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
   scale_y_continuous(expand = c(0,0), name = expression("Variable cost of enforcement, "*alpha)) +
   scale_fill_viridis_c(name = b_legend) +
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
   plot_theme()
 
 
@@ -216,6 +232,7 @@ lazy_ggsave(plot = biomass_heat_plots,
 
 
 # Effort heat maps here
+## Equilibrium effort as a function of lease area and acess fee
 E_chi_L <- expand_grid(L = L, chi = chi_new) %>% 
   mutate(results = pmap(.l = list(L = L, chi = chi),
                         .f = wrapper,
@@ -233,7 +250,8 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                         years = years,
                         want = "All")) %>% 
   unnest(cols = results) %>% 
-  select(L, chi, contains("E_")) %>% 
+  select(L, chi, contains("E_"), -E_e_vec) %>% 
+  filter(E_l_vec > 0) %>% 
   gather(patch, effort, -c(L, chi)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
@@ -246,10 +264,13 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
 
 effort_fee_heatmap <-
   ggplot(data = E_chi_L,
-         mapping = aes(x = L, y = chi, fill = effort_norm)) +
+         mapping = aes(x = L, y = chi, fill = effort_norm, z = effort_norm)) +
   geom_raster(interpolate = T) +
-  facet_wrap(~patch, ncol = 1) +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
+  geom_contour(color = "black") +
+  facet_wrap(~patch, ncol = 2) +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_viridis_c() +
   guides(fill = guide_colorbar(title = e_legend,
@@ -261,13 +282,14 @@ effort_fee_heatmap <-
 
 lazy_ggsave(plot = effort_fee_heatmap,
             filename = "effort_fee_heatmap",
-            width = 3.5,
-            height = 7)
+            width = 6,
+            height = 6)
 
 
 # alpha, L, and efforts
+## Equilibrium effort as a function of lease area and enforcement costs
 E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>% 
-  mutate(results = pmap(.l = list(L = L, chi = chi),
+  mutate(results = pmap(.l = list(L = L, alpha = alpha),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -277,14 +299,15 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                         q = q,
                         c = c,
                         beta = beta,
-                        alpha = alpha,
+                        chi = chi,
                         mu = mu,
                         w = w,
                         years = years,
                         want = "All")) %>% 
   unnest(cols = results) %>% 
-  select(L, chi, contains("E_")) %>% 
-  gather(patch, effort, -c(L, chi)) %>% 
+  select(L, alpha, contains("E_"), -E_e_vec) %>% 
+  # filter(E_l_vec > 0) %>% 
+  gather(patch, effort, -c(L, alpha)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
   ungroup() %>% 
@@ -299,8 +322,10 @@ effort_enforcement_cost_heatmap <-
          mapping = aes(x = L, y = alpha, fill = effort_norm, z = effort_norm)) +
   geom_raster(interpolate = T) +
   geom_contour(color = "black") +
-  facet_wrap(~patch, ncol = 1) +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1), expand = c(0, 0)) +
+  facet_wrap(~patch, ncol = 2) +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_viridis_c() +
   guides(fill = guide_colorbar(title = e_legend,
@@ -312,32 +337,13 @@ effort_enforcement_cost_heatmap <-
 
 lazy_ggsave(plot = effort_enforcement_cost_heatmap,
             filename = "effort_enforcement_cost_heatmap",
-            width = 3.5,
-            height = 7)
+            width = 6,
+            height = 6)
 
 # SCATTER PLOTS (lines, or whatever)
 
-benchmark <- expand_grid(L, w_new) %>% 
-  mutate(results = pmap_dbl(.l = list(L = L, w = w_new),
-                                      .f = wrapper,
-                                      r = r,
-                                      K = K,
-                                      X0 = X0,
-                                      D = D,
-                                      p = p,
-                                      q = q,
-                                      c = c,
-                                      beta = beta,
-                                      alpha = alpha,
-                                      chi = 0,
-                                      mu = mu,
-                                      years = years,
-                                      want = "All")) %>% 
-  unnest(cols = results)
-
-
-res_1 <- expand_grid(L, w_new) %>% 
-  mutate(equil_b = pmap_dbl(.l = list(L = L, w = w_new),
+res_1 <- expand_grid(L, w_new, chi_new = c(500, 10000, 20000)) %>% 
+  mutate(equil_b = pmap_dbl(.l = list(L = L, w = w_new, chi = chi_new),
                             .f = wrapper,
                             r = r,
                             K = K,
@@ -348,73 +354,94 @@ res_1 <- expand_grid(L, w_new) %>%
                             c = c,
                             beta = beta,
                             alpha = alpha,
-                            chi = chi,
                             mu = mu,
                             years = years,
-                            want = "X_vec") / K)
-
-combined <- left_join(res_1, benchmark, by = c("L", "w_new")) %>% 
-  mutate(equil_b = equil_b * K,
-         benchmark_equil_b = benchmark_equil_b * K,
-         equil_b_rel = (equil_b - benchmark_equil_b) / benchmark_equil_b)
-
-ggplot(combined, aes(x = L, y = equil_b_rel, color = w_new, group = w_new)) +
-  geom_line() +
-  plot_theme() +
-  scale_color_viridis_c() +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
-  guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
-                                frame.colour = "black",
-                                ticks.colour = "black")) +
-  labs(x = l_legend, y = b_legend)
+                            want = "X_vec") / K,
+         chi_label = paste0("Access fee = ", chi_new),
+         chi_label = fct_reorder(chi_label, chi_new))
 
 biomass_and_lease <- 
   ggplot(res_1, aes(x = L, y = equil_b, color = w_new, group = w_new)) +
   geom_line() +
   plot_theme() +
   scale_color_viridis_c() +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  facet_wrap(~chi_label, ncol = 1) +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
 labs(x = l_legend, y = b_legend)
 
 lazy_ggsave(plot = biomass_and_lease,
-            filename = "biomass_and_lease")
+            filename = "biomass_and_lease",
+            width = 3.5)
 
 
 # Harvests
 res_2 <- expand_grid(L, w_new) %>% 
-  mutate(equil_H_i = pmap_dbl(.l = list(L = L, w = w_new),
-                              .f = wrapper,
-                              r = r,
-                              K = K,
-                              X0 = X0,
-                              D = D,
-                              p = p,
-                              q = q,
-                              c = c,
-                              beta = beta,
-                              alpha = alpha,
-                              chi = chi,
-                              mu = mu,
-                              years = years,
-                              want = "H_i_vec") / K)
+  mutate(results = pmap(.l = list(L = L, w = w_new),
+                          .f = wrapper,
+                          r = r,
+                          K = K,
+                          X0 = X0,
+                          D = D,
+                          p = p,
+                          q = q,
+                          c = c,
+                          beta = beta,
+                          alpha = alpha,
+                          chi = chi,
+                          mu = mu,
+                          years = years,
+                          want = "All")) %>% 
+  unnest(cols = results) %>% 
+  select(L, w_new, contains("H_i")) %>% 
+  mutate(H_il_vec = H_il_vec / K,
+         H_in_vec = H_in_vec / K,
+         H_i = H_il_vec + H_in_vec)
 
-  
 illegal_harvest_and_lease <- 
-  ggplot(res_2, aes(x = L, y = equil_H_i, color = w_new, group = w_new)) +
+  ggplot(res_2, aes(x = L, y = H_i, color = w_new, group = w_new)) +
   geom_line() +
   plot_theme() +
   scale_color_viridis_c() +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
-  labs(x = l_legend, y = "Illegal harvest at equilibrium")
+  labs(x = l_legend, y = "Illegal harvest at equilibrium") +
+  theme(legend.justification = c(1, 1),
+        legend.position = c(1, 1))
+  
+illegal_harvest_and_lease_subsets <- 
+  res_2 %>% 
+  select(-H_i) %>% 
+  gather(patch, harvests, -c(L, w_new)) %>% 
+  ggplot(aes(x = L, y = harvests, color = w_new, group = w_new)) +
+  geom_line() +
+  facet_wrap(~patch) +
+  plot_theme() +
+  theme(legend.position = "none") +
+  scale_color_viridis_c() +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2)) +
+  guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
+                                frame.colour = "black",
+                                ticks.colour = "black")) +
+  labs(x = l_legend, y = "Illegal harvest\nat equilibrium")
 
-lazy_ggsave(plot = illegal_harvest_and_lease,
-            filename = "illegal_harvest_and_lease")
+illegal_harvest_and_lease_plot <- 
+  plot_grid(illegal_harvest_and_lease,
+            illegal_harvest_and_lease_subsets,
+            ncol = 1,
+            rel_heights = c(2, 1),
+            labels = "AUTO")
+
+lazy_ggsave(plot = illegal_harvest_and_lease_plot,
+            filename = "illegal_harvest_and_lease",
+            width = 3.5)
 
 
 
