@@ -4,6 +4,7 @@
 library(here)
 library(cowplot)
 library(tidyverse)
+library(scales)
 
 # Source functions
 source(here("scripts", "00_helpers.R"))
@@ -24,27 +25,21 @@ source(here("scripts", "03_default_parameters.R"))
 #
 ################################################################################
 
-l_legend <- "Proportion of reserve as lease area (L)"
-b_legend <- "Equilibrium\nbiomass (X / K)"
+l_legend <- "Lease area as a proportion of total reserve size (L)"
+b_legend <- "Equilibrium\nbiomass\n(X / K)"
 e_legend <- "Equilibrium\neffort"
   
-#### Plots we want ########
-
-# HEAT MAPS
+### -----------------
+### BIOMASS HEAT MAPS
+### -----------------
 
 L <- seq(0.1, 1, length.out = 50)
 
-# Biomass heat maps here
-
-# 1) mu vs L
-# Changing W and running this shifts the pattern left (optimal L shifts from ~ 0.5 to ~ 0.35 if W increases by an order of magnitude)
-# Changing chi and running this shifts the pattern right (optimal L shifts from ~0.5 to ~ 0.58 if chi increases by an order of magnitude)
-# Changine c and running this changes the pattern slightly (increasing c by 5-30x)
+# 1) Equilibrium biomass as a function of lease area (L) and enforcement coefficient (mu)
 
 mu_new <- seq(0.00005, 0.01, by = 0.0002)
 
-# Call the model on each combination of parameters
-res_1 <- expand_grid(L, mu_new) %>% 
+B_L_v_mu <- expand_grid(L, mu_new) %>% 
   mutate(equil_b = pmap_dbl(.l = list(L = L, mu = mu_new),
                             .f = wrapper,
                             r = r,
@@ -61,27 +56,11 @@ res_1 <- expand_grid(L, mu_new) %>%
                             years = years,
                             want = "X_vec"))
 
-
-res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K, z = equil_b)) +
-  geom_raster(interpolate = T) +
-  geom_contour(color = "black") +
-  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
-  scale_y_continuous(expand = c(0,0), name = expression("Enforcement coefficient, "*mu)) +
-  scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = b_legend,
-                               frame.colour = "black",
-                               ticks.colour = "black")) +
-  plot_theme()
-
-# 2) fine vs L
-# Changing r and running this cleans up the patchiness (try 0.5-2 times r). Slower growing species favor higher lease areas once the fine exceeds ~ 38000. Faster growing species favor a small lease area (the weird channel) above that point.  
-# Increasing chi doesn't change the pattern, but shifts everything right (increase chi by order of magnitude) 
-# Increasing c by an order of magnitude both increases total biomass and changes the pattern (increasing c order of magnitude)
+# 2) Equilibrium biomass as a function of lease area (L) and fine (W)
 
 w_new <- seq(100, 20000, by = 1000)
 
-# Call the model on each combination of parameters
-res_2 <- expand_grid(L, w_new) %>% 
+B_L_v_psi <- expand_grid(L, w_new) %>% 
   mutate(equil_b = pmap_dbl(.l = list(L = L, w = w_new),
                             .f = wrapper,
                             r = r,
@@ -98,25 +77,11 @@ res_2 <- expand_grid(L, w_new) %>%
                             years = years,
                             want = "X_vec"))
 
-
-res_2_plot <- ggplot(res_2, aes(x = L, y = w_new, fill = equil_b / K, z = equil_b)) +
-  geom_raster(interpolate = T) +
-  geom_contour(color = "black") +
-  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
-  scale_y_continuous(expand = c(0,0), name = expression("Fine, "*psi)) +
-  scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = b_legend,
-                               frame.colour = "black",
-                               ticks.colour = "black")) +
-  plot_theme()
-
-
-# 3) access fee vs L
+# 3) Equilibrium biomass as a function of lease area (L) and access fee (chi)
 
 chi_new <- seq(1, 30000, by = 500)
 
-# Call the model on each combination of parameters
-res_3 <- expand_grid(L, chi_new) %>% 
+B_L_v_chi <- expand_grid(L, chi_new) %>% 
   mutate(equil_b = pmap_dbl(.l = list(L = L, chi = chi_new),
                             .f = wrapper,
                             r = r,
@@ -134,23 +99,11 @@ res_3 <- expand_grid(L, chi_new) %>%
                             want = "X_vec"))
 
 
-res_3_plot <- ggplot(res_3, aes(x = L, y = chi_new, fill = equil_b / K, z = equil_b)) +
-  geom_raster(interpolate = T) +
-  geom_contour(color = "black") +
-  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
-  scale_y_continuous(expand = c(0,0), name = expression("Access fee, "*chi)) +
-  scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = b_legend,
-                               frame.colour = "black",
-                               ticks.colour = "black")) +
-  plot_theme()
-
-# 4) cost vs L
+# 4) Equilibrium biomass as a function of lease area (L) and enforcement cost (alpha)
 
 alpha_new <- seq(10, 50000, by = 1000)
 
-# Call the model on each combination of parameters
-res_4 <- expand_grid(L, alpha_new) %>% 
+B_L_v_alpha <- expand_grid(L, alpha_new) %>% 
   mutate(equil_b = pmap_dbl(.l = list(L = L, alpha = alpha_new),
                             .f = wrapper,
                             r = r,
@@ -167,73 +120,125 @@ res_4 <- expand_grid(L, alpha_new) %>%
                             years = years,
                             want = "X_vec"))
 
+# Get common biomass scale 
 
-res_4_plot <- ggplot(res_4, aes(x = L, y = alpha_new, fill = equil_b / K, z = equil_b)) +
+biomass_range <- c(range(B_L_v_mu$equil_b), range(B_L_v_psi$equil_b), range(B_L_v_chi$equil_b), range(B_L_v_alpha$equil_b))/K
+biomass_min <- min(biomass_range)
+biomass_max <- max(biomass_range)
+biomass_breaks <- seq(round(biomass_min, 2), round(biomass_max, 2), length.out = 5)
+
+
+# Make plots
+# 1)
+B_L_v_mu_plot <- ggplot(B_L_v_mu, aes(x = L, y = mu_new, fill = equil_b / K, z = equil_b)) +
   geom_raster(interpolate = T) +
   geom_contour(color = "black") +
   scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
-  scale_y_continuous(expand = c(0,0), name = expression("Variable cost of enforcement, "*alpha)) +
-  scale_fill_viridis_c(name = b_legend) +
+  scale_y_continuous(expand = c(0,0), name = expression("Enforcement coefficient ("*mu*")")) +
+  scale_fill_gradientn(colors = viridis_pal(option = "C")(9), limits=c(biomass_min, biomass_max), breaks = biomass_breaks, 
+                       na.value = "#FDE725FF")+
   guides(fill = guide_colorbar(title = b_legend,
                                frame.colour = "black",
                                ticks.colour = "black")) +
   plot_theme()
 
+lazy_ggsave(plot = B_L_v_mu_plot,
+            filename = "biomass_L_v_mu_heat_plot",
+            width = 10,
+            height = 6.5)
+
+# 2)
+B_L_v_psi_plot <- ggplot(B_L_v_psi, aes(x = L, y = w_new, fill = equil_b / K, z = equil_b)) +
+  geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
+  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
+  scale_y_continuous(expand = c(0,0), name = expression("Fine ("*psi*")"), labels = dollar) +
+  scale_fill_gradientn(colors = viridis_pal(option = "C")(9), limits=c(biomass_min, biomass_max), breaks = biomass_breaks, 
+                       na.value = "#FDE725FF")+
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  plot_theme()
+
+lazy_ggsave(plot = B_L_v_psi_plot,
+            filename = "biomass_L_v_psi_heat_plot",
+            width = 10,
+            height = 6.5)
+
+# 3)
+B_L_v_chi_plot <- ggplot(B_L_v_chi, aes(x = L, y = chi_new, fill = equil_b / K, z = equil_b)) +
+  geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
+  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
+  scale_y_continuous(expand = c(0,0), name = expression("Access fee ("*chi*")"), labels = dollar) +
+  scale_fill_gradientn(colors = viridis_pal(option = "C")(9), limits=c(biomass_min, biomass_max), breaks = biomass_breaks, 
+                       na.value = "#FDE725FF")+
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  plot_theme()
+
+lazy_ggsave(plot = B_L_v_chi_plot,
+            filename = "biomass_L_v_chi_heat_plot",
+            width = 10,
+            height = 6.5)
+
+# 4)
+B_L_v_alpha_plot <- ggplot(B_L_v_alpha, aes(x = L, y = alpha_new, fill = equil_b / K, z = equil_b)) +
+  geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
+  scale_x_continuous(expand = c(0,0), breaks = seq(0, 1, by = 0.1), name = l_legend) +
+  scale_y_continuous(expand = c(0,0), name = expression("Variable cost of enforcement ("*alpha*")"), labels = dollar) +
+  scale_fill_gradientn(colors = viridis_pal(option = "C")(9), limits=c(biomass_min, biomass_max), breaks = biomass_breaks, 
+                       na.value = "#FDE725FF")+
+  guides(fill = guide_colorbar(title = b_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  plot_theme()
+
+lazy_ggsave(plot = B_L_v_alpha_plot,
+            filename = "biomass_L_v_alpha_heat_plot",
+            width = 10,
+            height = 6.5)
 
 # Combine
 
-legend <- cowplot::get_legend(
+B_legend <- cowplot::get_legend(
   # create some space to the left of the legend
-  res_1_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
+  B_L_v_mu_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
 )
 
-title <- cowplot::ggdraw() + 
-  cowplot::draw_label(
-    paste0("Defaults: mu = ", mu, ", psi = ", w, ", chi = ", chi, ", alpha = ", alpha),
-    fontface = "bold",
-    size = 12,
-    x = 0,
-    hjust = 0
-  ) +
-  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7)
-  )
 
-biomass_heat_plots <- 
-  cowplot::plot_grid(
-    # title
-    title,
+B_combined_plot <- 
     cowplot::plot_grid(
       # plots
       cowplot::plot_grid(
-        res_1_plot + theme(legend.position="none"), 
-                                        res_2_plot + theme(legend.position="none"), 
-                                        res_3_plot + theme(legend.position="none"), 
-                                        res_4_plot + theme(legend.position="none"),
-                                        nrow = 2, ncol = 2,
-                                        labels = "AUTO",
-                                        label_size = 12
+        B_L_v_mu_plot + theme(legend.position="none"), 
+        B_L_v_psi_plot + theme(legend.position = "none"),
+        B_L_v_chi_plot + theme(legend.position = "none"),
+        B_L_v_alpha_plot + theme(legend.position = "none"),
+        nrow = 2, 
+        ncol = 2,
+        labels = "AUTO",
+        label_size = 16
         ),
       # legend
-      legend,
+      B_legend,
       rel_widths = c(2,0.3)
-    ),
-    ncol = 1,
-    rel_heights = c(0.1,2)
-  )
+    )
   
 # Save plot
-lazy_ggsave(plot = biomass_heat_plots,
-            filename = "biomass_heat_plots",
+lazy_ggsave(plot = B_combined_plot,
+            filename = "biomass_combined_heat_plot",
             width = 10,
-            height = 9)
+            height = 8.5)
 
 
-# Effort heat maps here
-## Equilibrium effort as a function of lease area and acess fee
-E_chi_L <- expand_grid(L = L, chi = chi_new) %>% 
+
+### EFFORT HEAT MAPS ###
+
+## 1) Equilibrium effort as a function of lease area (L) and access fee (chi)
+E_L_v_chi <- expand_grid(L = L, chi = chi_new) %>% 
   mutate(results = pmap(.l = list(L = L, chi = chi),
                         .f = wrapper,
                         r = r,
@@ -262,33 +267,8 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                            patch == "E_il_vec" ~ "Lease zone (illegal)",
                            T ~ "No-take zone (illegal)"))
 
-effort_fee_heatmap <-
-  ggplot(data = E_chi_L,
-         mapping = aes(x = L, y = chi, fill = effort_norm, z = effort_norm)) +
-  geom_raster(interpolate = T) +
-  geom_contour(color = "black") +
-  facet_wrap(~patch, ncol = 2) +
-  scale_x_continuous(limits = c(0, 1),
-                     breaks = seq(0, 1, by = 0.2),
-                     expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = e_legend,
-                               frame.colour = "black",
-                               ticks.colour = "black")) +
-  labs(x = l_legend, y = quote("Lease price ("~chi~")")) +
-  ggtitle(label = "Equilibrium effort in each zone") +
-  plot_theme()
-
-lazy_ggsave(plot = effort_fee_heatmap,
-            filename = "effort_fee_heatmap",
-            width = 6,
-            height = 6)
-
-
-# alpha, L, and efforts
-## Equilibrium effort as a function of lease area and enforcement costs
-E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>% 
+# 2) Equilibrium effort as a function of lease area (L) and enforcement cost (alpha)
+E_L_v_alpha <- expand_grid(L = L, alpha = alpha_new) %>% 
   mutate(results = pmap(.l = list(L = L, alpha = alpha),
                         .f = wrapper,
                         r = r,
@@ -317,32 +297,59 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                            patch == "E_il_vec" ~ "Lease zone (illegal)",
                            T ~ "No-take zone (illegal)"))
 
-effort_enforcement_cost_heatmap <- 
-  ggplot(data = E_alpha_L,
+
+# Make plots
+# 1)
+E_L_v_chi_plot <-
+  ggplot(data = E_L_v_chi,
+         mapping = aes(x = L, y = chi, fill = effort_norm, z = effort_norm)) +
+  geom_raster(interpolate = T) +
+  geom_contour(color = "black") +
+  facet_wrap(~patch, ncol = 2) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(0.1, 1, by = 0.1)) +
+  scale_y_continuous(expand = c(0, 0), labels = dollar) +
+  scale_fill_viridis_c(option = "A") +
+  guides(fill = guide_colorbar(title = e_legend,
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  labs(x = l_legend, y = quote("Access Fee ("~chi~")")) +
+  #ggtitle(label = "Equilibrium effort in each zone") +
+  plot_theme()
+
+lazy_ggsave(plot = E_L_v_chi_plot,
+            filename = "effort_L_v_chi_heat_plot",
+            width = 10,
+            height = 8.5)
+
+# 2)
+E_L_v_alpha_plot <- 
+  ggplot(data = E_L_v_alpha,
          mapping = aes(x = L, y = alpha, fill = effort_norm, z = effort_norm)) +
   geom_raster(interpolate = T) +
   geom_contour(color = "black") +
   facet_wrap(~patch, ncol = 2) +
-  scale_x_continuous(limits = c(0, 1),
-                     breaks = seq(0, 1, by = 0.2),
+  scale_x_continuous(breaks = seq(0.1, 1, by = 0.1),
                      expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  scale_fill_viridis_c() +
+  scale_y_continuous(expand = c(0, 0), labels = dollar) +
+  scale_fill_viridis_c(option = "A") +
   guides(fill = guide_colorbar(title = e_legend,
                                frame.colour = "black",
                                ticks.colour = "black")) +
-  labs(x = l_legend, y = quote("Enforcement cost ("~alpha~")")) +
-  ggtitle(label = "Equilibrium effort in each zone") +
+  labs(x = l_legend, y = quote("Variable cost of enforcement ("~alpha~")")) +
+  #ggtitle(label = "Equilibrium effort in each zone") +
   plot_theme()
 
-lazy_ggsave(plot = effort_enforcement_cost_heatmap,
-            filename = "effort_enforcement_cost_heatmap",
-            width = 6,
-            height = 6)
+lazy_ggsave(plot = E_L_v_alpha_plot,
+            filename = "effort_L_v_alpha_heat_plot",
+            width = 10,
+            height = 8.5)
 
-# SCATTER PLOTS (lines, or whatever)
 
-res_1 <- expand_grid(L, w_new, chi_new = c(500, 10000, 20000)) %>% 
+### SCATTER PLOTS ###
+
+# 1) Biomass 
+B_L_v_psi_chi <- expand_grid(L, w_new, chi_new = c(500, 10000)) %>% 
   mutate(equil_b = pmap_dbl(.l = list(L = L, w = w_new, chi = chi_new),
                             .f = wrapper,
                             r = r,
@@ -357,29 +364,30 @@ res_1 <- expand_grid(L, w_new, chi_new = c(500, 10000, 20000)) %>%
                             mu = mu,
                             years = years,
                             want = "X_vec") / K,
-         chi_label = paste0("Access fee = ", chi_new),
+         chi_label = paste0("Access fee : $", format(chi_new, big.mark = ",")),
          chi_label = fct_reorder(chi_label, chi_new))
 
-biomass_and_lease <- 
-  ggplot(res_1, aes(x = L, y = equil_b, color = w_new, group = w_new)) +
+B_L_v_psi_line_plot <- 
+  ggplot(B_L_v_psi_chi, aes(x = L, y = equil_b, color = w_new, group = w_new)) +
   geom_line() +
   plot_theme() +
-  scale_color_viridis_c() +
+  scale_color_viridis_c()+
   facet_wrap(~chi_label, ncol = 1) +
-  scale_x_continuous(limits = c(0, 1),
-                     breaks = seq(0, 1, by = 0.2)) +
+  scale_x_continuous(limits = c(0.1, 1),
+                     breaks = seq(0.1, 1, by = 0.1)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
 labs(x = l_legend, y = b_legend)
 
-lazy_ggsave(plot = biomass_and_lease,
-            filename = "biomass_and_lease",
-            width = 3.5)
+lazy_ggsave(plot = B_L_v_psi_line_plot,
+            filename = "biomass_v_L_line_plot",
+            width = 7,
+            height = 8.5)
 
 
-# Harvests
-res_2 <- expand_grid(L, w_new) %>% 
+# 2) Harvest
+H_L_v_psi_chi <- expand_grid(L, w_new) %>% 
   mutate(results = pmap(.l = list(L = L, w = w_new),
                           .f = wrapper,
                           r = r,
@@ -401,51 +409,82 @@ res_2 <- expand_grid(L, w_new) %>%
          H_in_vec = H_in_vec / K,
          H_i = H_il_vec + H_in_vec)
 
-illegal_harvest_and_lease <- 
-  ggplot(res_2, aes(x = L, y = H_i, color = w_new, group = w_new)) +
+# Total
+total_illegal_harvest_plot <- 
+  ggplot(H_L_v_psi_chi, aes(x = L, y = H_i, color = w_new, group = w_new)) +
   geom_line() +
   plot_theme() +
   scale_color_viridis_c() +
-  scale_x_continuous(limits = c(0, 1),
-                     breaks = seq(0, 1, by = 0.2)) +
+  scale_x_continuous(limits = c(0.1, 1),
+                     breaks = seq(0.1, 1, by = 0.1)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
-  labs(x = l_legend, y = "Illegal harvest at equilibrium") +
-  theme(legend.justification = c(1, 1),
-        legend.position = c(1, 1))
+  labs(x = l_legend, y = "Equilibrium illegal\nharvest")
+
+lazy_ggsave(plot = total_illegal_harvest_plot,
+            filename = "illegal_harvest_total_L_v_psi_plot",
+            width = 10,
+            height = 6.5)
   
-illegal_harvest_and_lease_subsets <- 
-  res_2 %>% 
+# By patch
+illegal_harvest_subset_plots <- 
+  H_L_v_psi_chi %>% 
   select(-H_i) %>% 
   gather(patch, harvests, -c(L, w_new)) %>% 
+  mutate(patch_new = case_when(patch == "H_il_vec" ~ "Lease zone (illegal)",
+                               patch == "H_in_vec" ~ "No-take zone (illegal)")) %>%
   ggplot(aes(x = L, y = harvests, color = w_new, group = w_new)) +
   geom_line() +
-  facet_wrap(~patch) +
+  facet_wrap(~patch_new) +
   plot_theme() +
-  theme(legend.position = "none") +
   scale_color_viridis_c() +
-  scale_x_continuous(limits = c(0, 1),
-                     breaks = seq(0, 1, by = 0.2)) +
+  scale_x_continuous(limits = c(0.1, 1),
+                     breaks = seq(0.1, 1, by = 0.1)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
-  labs(x = l_legend, y = "Illegal harvest\nat equilibrium")
+  labs(x = l_legend, y = "Equilibrium illegal\nharvest")
 
-illegal_harvest_and_lease_plot <- 
-  plot_grid(illegal_harvest_and_lease,
-            illegal_harvest_and_lease_subsets,
-            ncol = 1,
-            rel_heights = c(2, 1),
-            labels = "AUTO")
+lazy_ggsave(plot = illegal_harvest_subset_plots,
+            filename = "illegal_harvest_patch_L_v_psi_plot",
+            width = 10,
+            height = 6.5)
 
-lazy_ggsave(plot = illegal_harvest_and_lease_plot,
-            filename = "illegal_harvest_and_lease",
-            width = 3.5)
+# Combine
+fine_legend <- cowplot::get_legend(
+  # create some space to the left of the legend
+  total_illegal_harvest_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
+)
 
 
-# Biomass accrual
+illegal_harvest_combined_plot <- 
+  cowplot::plot_grid(
+    # plots
+    cowplot::plot_grid(
+      total_illegal_harvest_plot + theme(legend.position="none"), 
+      illegal_harvest_subset_plots + theme(legend.position = "none"),
+      ncol = 1,
+      rel_heights = c(1.5,1),
+      labels = "AUTO",
+      label_size = 16
+    ),
+    # legend
+    fine_legend,
+    rel_widths = c(2,0.3)
+  )
+
+
+lazy_ggsave(plot = illegal_harvest_combined_plot,
+            filename = "illegal_harvest_combined_plot",
+            width = 10,
+            height = 8.5)
+
+
+# 3) Biomass accrual
+
 w_new <- seq(100, 20000, by = 4000)
+
 biomass_accrual <- expand_grid(L, w_new) %>% 
   mutate(results = pmap(.l = list(L = L, w = w_new),
                         .f = wrapper,
@@ -465,23 +504,27 @@ biomass_accrual <- expand_grid(L, w_new) %>%
   unnest(cols = results) %>% 
   mutate(X_rel = X_r_vec / X_f_vec)
 
+
 biomass_accrual_plot <-
   ggplot(data = biomass_accrual,
          mapping = aes(x = L, y = X_rel, size = X_vec / K, fill = w_new)) +
   geom_point(shape = 21, alpha = 0.75, color = "black") +
   labs(x = l_legend,
-       y = expression(frac(X[r], X[l]))) +
+       y = expression(frac(X[R], X[L]))) +
   scale_fill_viridis_c() +
   scale_x_continuous(limits = c(0, 1)) +
   guides(size = guide_legend(title = b_legend),
-         fill = guide_colorbar(title = quote("Fine ("~psi~")"))) +
+         fill = guide_colorbar(title = quote("Fine ("~psi~")"),
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
   plot_theme() +
   geom_hline(yintercept = 1, linetype = "dashed", size = 1)
 
 
 lazy_ggsave(plot = biomass_accrual_plot,
-            filename = "biomass_accrual",
-            width = 7)
+            filename = "biomass_accrual_plot",
+            width = 10,
+            height = 6.5)
 
 
 
