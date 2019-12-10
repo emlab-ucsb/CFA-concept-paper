@@ -10,7 +10,8 @@
 # with all state variables through time
 fast_check <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
   model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>% 
-    mutate_at(.vars = vars(X_r_vec, X_f_vec, X_vec), .funs =  ~ . / K) %>% 
+    mutate_at(.vars = vars(X_r_vec, X_f_vec), .funs =  ~ . / (K / 2)) %>% 
+    mutate(X_vec = X_vec / K) %>% 
     gather(variable, value, - time) %>% 
     ggplot(aes(x = time, y = value)) +
     geom_line() +
