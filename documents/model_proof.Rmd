@@ -140,13 +140,15 @@ $$
 
 source(here::here("scripts", "03_default_parameters.R"))
 
+f <- 0.5
 a <- p * q
 z <- 1 / (beta - 1)
 
 x <- X0
 theta <- 0.95
+w <- 4000
 
-L <- 0.9
+L <- 0.1
 
 n1 <- a * (f ^ 2) * (L ^ 2) * z * ((a * f * L * x - chi) ^ (z - 1))
 n2 <- a * (f ^ 2) * ((1 - L) ^ 2) * z  * (((a * f * (1 - L) * x) - (theta * w)) ^ (z - 1))
@@ -161,6 +163,7 @@ d4 <- -a* (f ^ 2) * (1 - L) * x * z * (((a * f * (1 - L) * x) - (theta * w)) ^ (
 
 
 (n1 + n2 + n3 + n4) / (d1 + d2 + d3 + d4)
+(d1 + d2 + d3 + d4) / (n1 + n2 + n3 + n4)
 
 ```
 
