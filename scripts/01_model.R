@@ -40,7 +40,7 @@
 # 
 ################################################################
 
-model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
+model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, tolerance = 0.05) {
   # Define vectors to store state variables through time
   X_vec <-
     X_r_vec <-
@@ -123,8 +123,17 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
   if(!near(
     X_vec[i-1],
     X_vec[i],
-    tol = 0.05 * X_vec[i])) {
-    stop("Error: Equilibrium was not reached!")
+    tol = tolerance * X_vec[i])) {
+    message <- paste("Equilibrium was not reached!",
+                     "\n==========================\n",
+                     "These were the parameters:\n",
+                     "L     =", L, "\n",
+                     "alpha =", alpha, "\n",
+                     "mu    =", mu, "\n",
+                     "w     = ", w, "\n",
+                     "chi   = ", chi, "\n"
+                     )
+    warning(message)
     }
   
   # Combine all results into a tibble
