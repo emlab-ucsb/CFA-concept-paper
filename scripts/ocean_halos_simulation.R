@@ -50,7 +50,7 @@ res_1 <- expand_grid(L, mu_new) %>%
                             r = r,
                             K = K,
                             X0 = X0,
-                            f = f,
+                            D = D,
                             p = p,
                             q = q,
                             c = c,
@@ -74,7 +74,7 @@ res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K)) +
 # Increasing chi doesn't change the pattern, but shifts everything right (increase chi by order of magnitude) 
 # Increasing c by an order of magnitude both increases total biomass and changes the pattern (increasing c order of magnitude)
 
-w_new <- seq(100, 32000, by = 1000)
+w_new <- seq(100, 35000, by = 1000)
 
 # Call the model on each combination of parameters
 res_2 <- expand_grid(L, w_new) %>% 
@@ -83,7 +83,7 @@ res_2 <- expand_grid(L, w_new) %>%
                             r = r,
                             K = K,
                             X0 = X0,
-                            f = f,
+                            D = D,
                             p = p,
                             q = q,
                             c = c,
@@ -114,7 +114,7 @@ res_3 <- expand_grid(L, chi_new) %>%
                             r = r,
                             K = K,
                             X0 = X0,
-                            f = f,
+                            D = D,
                             p = p,
                             q = q,
                             c = c,
@@ -144,7 +144,7 @@ res_4 <- expand_grid(L, alpha_new) %>%
                             r = r,
                             K = K,
                             X0 = X0,
-                            f = f,
+                            D = D,
                             p = p,
                             q = q,
                             chi = chi,
@@ -175,7 +175,7 @@ title <- cowplot::ggdraw() +
   cowplot::draw_label(
     paste0("Defaults: mu = ", mu, ", psi = ", w, ", chi = ", chi, ", alpha = ", alpha),
     fontface = "bold",
-    size = text_size,
+    size = 12,
     x = 0,
     hjust = 0
   ) +
@@ -198,7 +198,7 @@ biomass_heat_plots <-
                                         res_4_plot + theme(legend.position="none"),
                                         nrow = 2, ncol = 2,
                                         labels = "AUTO",
-                                        label_size = text_size
+                                        label_size = 12
         ),
       # legend
       legend,
@@ -222,7 +222,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -237,7 +237,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -252,7 +252,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -261,7 +261,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                               mu = mu,
                               w = w,
                               years = years,
-                              want = "E_i_vec")) %>% 
+                              want = "E_il_vec")) %>% 
   gather(patch, effort, -c(L, chi)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
@@ -300,7 +300,7 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -315,7 +315,7 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -330,7 +330,7 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
@@ -379,7 +379,7 @@ benchmark <- expand_grid(L, w_new) %>%
                                       r = r,
                                       K = K,
                                       X0 = X0,
-                                      f = f,
+                                      D = D,
                                       p = p,
                                       q = q,
                                       c = c,
@@ -394,7 +394,7 @@ benchmark <- expand_grid(L, w_new) %>%
                                       r = r,
                                       K = K,
                                       X0 = X0,
-                                      f = f,
+                                      D = D,
                                       p = p,
                                       q = q,
                                       c = c,
@@ -409,7 +409,7 @@ benchmark <- expand_grid(L, w_new) %>%
                                        r = r,
                                        K = K,
                                        X0 = X0,
-                                       f = f,
+                                       D = D,
                                        p = p,
                                        q = q,
                                        c = c,
@@ -427,7 +427,7 @@ res_1 <- expand_grid(L, w_new) %>%
                             r = r,
                             K = K,
                             X0 = X0,
-                            f = f,
+                            D = D,
                             p = p,
                             q = q,
                             c = c,
@@ -475,7 +475,7 @@ res_2 <- expand_grid(L, w_new) %>%
                               r = r,
                               K = K,
                               X0 = X0,
-                              f = f,
+                              D = D,
                               p = p,
                               q = q,
                               c = c,
