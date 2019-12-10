@@ -251,7 +251,7 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                         want = "All")) %>% 
   unnest(cols = results) %>% 
   select(L, chi, contains("E_"), -E_e_vec) %>% 
-  filter(E_l_vec > 0) %>% 
+  # filter(E_l_vec > 0) %>% 
   gather(patch, effort, -c(L, chi)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
@@ -442,6 +442,47 @@ illegal_harvest_and_lease_plot <-
 lazy_ggsave(plot = illegal_harvest_and_lease_plot,
             filename = "illegal_harvest_and_lease",
             width = 3.5)
+
+
+# Biomass accrual
+w_new <- seq(100, 20000, by = 4000)
+biomass_accrual <- expand_grid(L, w_new) %>% 
+  mutate(results = pmap(.l = list(L = L, w = w_new),
+                        .f = wrapper,
+                        r = r,
+                        K = K,
+                        X0 = X0,
+                        D = D,
+                        p = p,
+                        q = q,
+                        c = c,
+                        beta = beta,
+                        alpha = alpha,
+                        chi = chi,
+                        mu = mu,
+                        years = years,
+                        want = "All")) %>% 
+  unnest(cols = results) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec)
+
+biomass_accrual_plot <-
+  ggplot(data = biomass_accrual,
+         mapping = aes(x = L, y = X_rel, size = X_vec / K, fill = w_new)) +
+  geom_point(shape = 21, alpha = 0.75, color = "black") +
+  labs(x = l_legend,
+       y = expression(frac(X[r], X[l]))) +
+  scale_fill_viridis_c() +
+  scale_x_continuous(limits = c(0, 1)) +
+  guides(size = guide_legend(title = b_legend),
+         fill = guide_colorbar(title = quote("Fine ("~psi~")"))) +
+  plot_theme() +
+  geom_hline(yintercept = 1, linetype = "dashed", size = 1)
+
+
+lazy_ggsave(plot = biomass_accrual_plot,
+            filename = "biomass_accrual",
+            width = 7)
+
 
 
 
