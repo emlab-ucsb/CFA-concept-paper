@@ -57,8 +57,8 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
   
   
   X_now_r <- X0/2                           # Initial biomass in reserve
-  X_now_f <- X0/2                          # Initial biomass in fishing area
-  time <- seq_len(years)                # Create vector of time
+  X_now_f <- X0/2                           # Initial biomass in fishing area
+  time <- seq_len(years)                    # Create vector of time
   
   K_new <- K/2
   
@@ -92,11 +92,11 @@ model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
     H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
     
     # Growth in each area
-    X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_new))) - H_f                                                            # Gordon-Schafer
-    X_growth_r <- X_r + (X_r * r * (1 - (X_r / K_new))) - H_r                                                            # Gordon-Schafer
+    X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_new)))  - H_f                                           # Gordon-Schafer
+    X_growth_r <- X_r + (X_r * r * (1 - (X_r / K_new)))  - H_r                                           # Gordon-Schafer
     
-    X_next_f <- (X_growth_f * D[1,1]) + (X_growth_r * D[1,2])                                                      
-    X_next_r <- (X_growth_r * D[2,2]) + (X_growth_f * D[2,1])                                                              
+    X_next_f <- (X_growth_f * D[1,1]) + (X_growth_r * D[1,2])                                            # Dispersal in F         
+    X_next_r <- (X_growth_r * D[2,2]) + (X_growth_f * D[2,1])                                            # Dispersal in R                
     
     # Track state variables
     X_vec[i] <- X_tot
