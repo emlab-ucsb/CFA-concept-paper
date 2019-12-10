@@ -13,12 +13,12 @@ wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, wan
   if(!want == "All"){
     value <- 
       model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
-      filter(time == max(time)) %>%                                          # keep biomass in the last timestep only
+      filter(time == max(time)) %>%                                          # keep the last timestep only
       pull({{want}})                                                         # return desired variable 
   } else {
     value <- 
       model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
-      filter(time == max(time))                                              # keep biomass in the last timestep only
+      filter(time == max(time))                                              # keep the last timestep only
   }
   
   return(value)                                                            # Return the value
