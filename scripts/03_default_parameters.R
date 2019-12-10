@@ -8,8 +8,8 @@
 r <- 0.57                 # *Growth rate
 K <- 6.876526e6           # *Carrying capacity (tons)
 X0 <- 3.507028e6          # *Initial biomass (tons)
-D <- matrix(c(0.6, 0.4,
-              0.4, 0.6),
+D <- matrix(c(0.7, 0.3,
+              0.3, 0.7),
             nrow = 2,
             byrow = T)                 # *Dispersal between patches
 
@@ -23,7 +23,7 @@ beta <- 1.3               # *Cost exponent (From upsides?)
 L <- 0.7                  # Size of the lease zone
 alpha <- 9000              # Marginal cost of enforcement
 mu <- 1e-3                # Enforcement coefficient
-w <- 18000                # Per-unit-effort fine
+w <- 9000                # Per-unit-effort fine
 chi <- 1000               # Per-unit-access fee
 
 ## Duration of simulation
