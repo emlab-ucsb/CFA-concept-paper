@@ -41,6 +41,7 @@
 ################################################################
 
 model <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, tolerance = 0.05) {
+  
   # Define vectors to store state variables through time
   X_vec <-
     X_r_vec <-
