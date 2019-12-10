@@ -74,7 +74,7 @@ res_1_plot <- ggplot(res_1, aes(x = L, y = mu_new, fill = equil_b / K)) +
 # Increasing chi doesn't change the pattern, but shifts everything right (increase chi by order of magnitude) 
 # Increasing c by an order of magnitude both increases total biomass and changes the pattern (increasing c order of magnitude)
 
-w_new <- seq(100, 35000, by = 1000)
+w_new <- seq(100, 20000, by = 1000)
 
 # Call the model on each combination of parameters
 res_2 <- expand_grid(L, w_new) %>% 
@@ -247,29 +247,45 @@ E_chi_L <- expand_grid(L = L, chi = chi_new) %>%
                               w = w,
                               years = years,
                               want = "E_l_vec"),
-         equil_E_i = pmap_dbl(.l = list(L = L, chi = chi),
-                              .f = wrapper,
-                              r = r,
-                              K = K,
-                              X0 = X0,
-                              D = D,
-                              p = p,
-                              q = q,
-                              c = c,
-                              beta = beta,
-                              alpha = alpha,
-                              mu = mu,
-                              w = w,
-                              years = years,
-                              want = "E_il_vec")) %>% 
+         equil_E_il = pmap_dbl(.l = list(L = L, chi = chi),
+                               .f = wrapper,
+                               r = r,
+                               K = K,
+                               X0 = X0,
+                               D = D,
+                               p = p,
+                               q = q,
+                               c = c,
+                               beta = beta,
+                               alpha = alpha,
+                               mu = mu,
+                               w = w,
+                               years = years,
+                               want = "E_il_vec"),
+         equil_E_in = pmap_dbl(.l = list(L = L, chi = chi),
+                               .f = wrapper,
+                               r = r,
+                               K = K,
+                               X0 = X0,
+                               D = D,
+                               p = p,
+                               q = q,
+                               c = c,
+                               beta = beta,
+                               alpha = alpha,
+                               mu = mu,
+                               w = w,
+                               years = years,
+                               want = "E_in_vec")) %>% 
   gather(patch, effort, -c(L, chi)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
   ungroup() %>% 
   mutate(effort_norm = effort / max_e,
          patch = case_when(patch == "equil_E_f" ~ "Fishing zone",
-                           patch == "equil_E_l" ~ "Lease zone",
-                           T ~ "No-take zone")
+                           patch == "equil_E_l" ~ "Lease zone (legal)",
+                           patch == "equil_E_il" ~ "Lease zone (illegal)",
+                           T ~ "No-take zone (illegal)")
   )
 
 effort_fee_heatmap <-
@@ -325,7 +341,7 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                               w = w,
                               years = years,
                               want = "E_l_vec"),
-         equil_E_i = pmap_dbl(.l = list(L = L, alpha = alpha),
+         equil_E_il = pmap_dbl(.l = list(L = L, alpha = alpha),
                               .f = wrapper,
                               r = r,
                               K = K,
@@ -339,15 +355,31 @@ E_alpha_L <- expand_grid(L = L, alpha = alpha_new) %>%
                               mu = mu,
                               w = w,
                               years = years,
-                              want = "E_i_vec")) %>% 
+                              want = "E_il_vec"),
+         equil_E_in = pmap_dbl(.l = list(L = L, alpha = alpha),
+                              .f = wrapper,
+                              r = r,
+                              K = K,
+                              X0 = X0,
+                              D = D,
+                              p = p,
+                              q = q,
+                              c = c,
+                              beta = beta,
+                              chi = chi,
+                              mu = mu,
+                              w = w,
+                              years = years,
+                              want = "E_in_vec")) %>% 
   gather(patch, effort, -c(L, alpha)) %>% 
   group_by(patch) %>% 
   mutate(max_e = max(effort)) %>% 
   ungroup() %>% 
   mutate(effort_norm = effort / max_e,
          patch = case_when(patch == "equil_E_f" ~ "Fishing zone",
-                           patch == "equil_E_l" ~ "Lease zone",
-                           T ~ "No-take zone")
+                           patch == "equil_E_l" ~ "Lease zone (legal)",
+                           patch == "equil_E_il" ~ "Lease zone (illegal)",
+                           T ~ "No-take zone (illegal)")
   )
 
 effort_enforcement_cost_heatmap <- 
@@ -389,21 +421,6 @@ benchmark <- expand_grid(L, w_new) %>%
                                       mu = mu,
                                       years = years,
                                       want = "X_vec") / K,
-         benchmark_equil_Hi = pmap_dbl(.l = list(L = L, w = w_new),
-                                      .f = wrapper,
-                                      r = r,
-                                      K = K,
-                                      X0 = X0,
-                                      D = D,
-                                      p = p,
-                                      q = q,
-                                      c = c,
-                                      beta = beta,
-                                      alpha = alpha,
-                                      chi = 0,
-                                      mu = mu,
-                                      years = years,
-                                      want = "H_i_vec"),
          benchmark_equil_Ei = pmap_dbl(.l = list(L = L, w = w_new),
                                        .f = wrapper,
                                        r = r,
@@ -418,7 +435,52 @@ benchmark <- expand_grid(L, w_new) %>%
                                        chi = 0,
                                        mu = mu,
                                        years = years,
-                                       want = "E_i_vec"))
+                                       want = "X_f_vec") / K,
+         benchmark_equil_Ei = pmap_dbl(.l = list(L = L, w = w_new),
+                                       .f = wrapper,
+                                       r = r,
+                                       K = K,
+                                       X0 = X0,
+                                       D = D,
+                                       p = p,
+                                       q = q,
+                                       c = c,
+                                       beta = beta,
+                                       alpha = alpha,
+                                       chi = 0,
+                                       mu = mu,
+                                       years = years,
+                                       want = "X_r_vec") / K,
+         benchmark_equil_Hin = pmap_dbl(.l = list(L = L, w = w_new),
+                                        .f = wrapper,
+                                        r = r,
+                                        K = K,
+                                        X0 = X0,
+                                        D = D,
+                                        p = p,
+                                        q = q,
+                                        c = c,
+                                        beta = beta,
+                                        alpha = alpha,
+                                        chi = 0,
+                                        mu = mu,
+                                        years = years,
+                                        want = "H_in_vec"),
+         benchmark_equil_Hil = pmap_dbl(.l = list(L = L, w = w_new),
+                                        .f = wrapper,
+                                        r = r,
+                                        K = K,
+                                        X0 = X0,
+                                        D = D,
+                                        p = p,
+                                        q = q,
+                                        c = c,
+                                        beta = beta,
+                                        alpha = alpha,
+                                        chi = 0,
+                                        mu = mu,
+                                        years = years,
+                                        want = "H_il_vec"))
 
 
 res_1 <- expand_grid(L, w_new) %>% 
