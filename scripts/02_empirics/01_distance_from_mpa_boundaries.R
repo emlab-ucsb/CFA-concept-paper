@@ -139,15 +139,19 @@ distance_final_table <- as.data.frame(distance_final, xy = T) %>%
 
 # Cobmine them
 output_table <- left_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>% 
-  mutate_at(vars(lon, lat), function(x){(floor(x / 0.1) * 0.1) + 0.05})
+  mutate_at(vars(lon, lat), function(x){(floor(x / 0.1) * 0.1) + 0.05}) %>% 
+  drop_na(distance)
+
+# Export the data
+write.csv(output_table,
+          here("data", "gridded_distance_from_lsmpa_borders.csv"),
+          row.names = F)
 
 # Export a nicer version as a map
-
 coast <- rnaturalearth::ne_countries(scale = "small", returnclass = "sf")
 
 distance_to_no_take_mpa_border_map <- 
   output_table %>% 
-  drop_na(distance) %>% 
   filter(distance > -100e3 * 1.854) %>% 
   ggplot() +
   geom_tile(aes(x = lon, y = lat, fill = distance)) +
@@ -163,11 +167,6 @@ distance_to_no_take_mpa_border_map <-
   
 lazy_ggsave(plot = distance_to_no_take_mpa_border_map,
             filename = "distance_to_no_take_mpa_border_map")
-
-# Export the data
-write.csv(output_table,
-          here("data", "gridded_distance_from_lsmpa_borders.csv"),
-          row.names = F)
 
 ## SEND TO GOOGLE BIG QUERY ##############################################################
 ucsb_project <- "emlab-gcp" # Name of our project
@@ -193,73 +192,3 @@ if(!bq_table_exists(dist_to_lsmpa)){
                   fields = output_table) %>%
     bq_table_upload(values = output_table)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# WITH
-# vessels_i_want AS (
-#   SELECT
-#   ssvid,
-#   best.best_vessel_class,
-#   best.best_engine_power_kw
-#   FROM
-#   `world-fishing-827.gfw_research.vi_ssvid_v20190430`
-#   WHERE
-#   best.best_vessel_class IN ("tuna_purse_seines",
-#                              "drifting_longlines",
-#                              "trawlers")
-#   AND on_fishing_list_best
-#   AND activity.active_hours > 0),
-# #
-# #
-# #
-# #
-# ########
-# gridded_effort_by_vessel_and_year AS (
-#   SELECT
-#   EXTRACT(year
-#           FROM
-#           timestamp) AS year,
-#   best_vessel_class,
-#   CAST(FLOOR(lat / 0.1) * 0.1 AS NUMERIC) + 0.05 AS lat,
-#   CAST(FLOOR(lon / 0.1) * 0.1 AS NUMERIC) + 0.05 AS lon,
-#   SUM(hours) AS fishing_hours
-#   FROM
-#   `world-fishing-827.gfw_research.pipe_production_v20190502_fishing`
-#   LEFT JOIN
-#   vessels_i_want
-#   USING
-#   (ssvid)
-#   WHERE
-#   ssvid IN (
-#     SELECT
-#     ssvid
-#     FROM
-#     `vessels_i_want`)
-#   AND nnet_score > 0.5
-#   AND distance_from_shore_m > 1000
-#   AND DATE(_PARTITIONTIME) > "2015-12-31"
-#   GROUP BY
-#   year,
-#   lat,
-#   lon,
-#   best_engine_power_kw,
-#   best_vessel_class
-#   LIMIT
-#   1000 )
-# 
-# SELECT * FROM gridded_effort_by_vessel_and_year 
