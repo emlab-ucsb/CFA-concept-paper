@@ -1,3 +1,20 @@
+################################################################################
+#
+# This query produces a table of gridded fishing effort (hours) and their
+# distance to LSMPA borders.
+# 
+# The query is divided into 2 sub-queries:
+# - First, we identify a list of MMSIs (ssvid) that:
+#             - have had activity
+#             - are purse seiners, longliners, or trawlers
+# - We then create a gridded version of fishing effort (0.1 degree res)
+#
+# Once these two subqueries are done, we call the distance to lsmpa table and
+# left join by lat / long.
+################################################################################
+########
+# Identify vessels we want
+########
 WITH
   vessels_i_want AS (
   SELECT
@@ -16,6 +33,8 @@ WITH
   #
   #
   #
+  ########
+  # Get gridded effort by year and gear
   ########
   gridded_effort_by_gear_and_year AS (
   SELECT
@@ -47,13 +66,20 @@ WITH
     lon,
     best_engine_power_kw,
     best_vessel_class)
+    #
+    #
+    #
+    #
+    ########
+    # Left join LSMPA distance and identity
+    ########
 SELECT
   year,
   best_vessel_class,
   lat,
   lon,
   distance,
-  wdpa_pid,
+  wdpa_pid_num,
   fishing_hours
 FROM
   gridded_effort_by_gear_and_year
