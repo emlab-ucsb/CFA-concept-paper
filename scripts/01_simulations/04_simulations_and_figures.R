@@ -8,9 +8,9 @@ library(scales)
 
 # Source functions
 source(here("scripts", "00_helpers.R"))
-source(here("scripts", "01_model.R"))
-source(here("scripts", "02_wrapper.R"))
-source(here("scripts", "03_default_parameters.R"))
+source(here("scripts", "01_simulations", "01_model.R"))
+source(here("scripts", "01_simulations", "02_wrapper.R"))
+source(here("scripts", "01_simulations", "03_default_parameters.R"))
 
 #### Running simulations #######################################################
 #
