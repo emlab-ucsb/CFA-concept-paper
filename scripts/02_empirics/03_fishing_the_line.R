@@ -40,9 +40,11 @@ fishing_in_5k_increments <- data %>%
   group_by(best_vessel_class, year, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T)) %>%             # Calculate average
   ungroup() %>% 
-  mutate(vessel_class = case_when(best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
-                                  best_vessel_class == "trawlers" ~ "Trawlers",
-                                  best_vessel_class == "tuna_purase_seines" ~ "Tuna purse seines"))
+  mutate(vessel_class = case_when(
+    best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
+    best_vessel_class == "trawlers" ~ "Trawlers",
+    best_vessel_class == "tuna_purase_seines" ~ "Tuna purse seines")
+  )
 
 # Create figure
 fishing_the_line_plot <- 
