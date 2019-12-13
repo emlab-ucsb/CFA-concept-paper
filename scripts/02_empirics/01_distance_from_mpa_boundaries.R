@@ -50,7 +50,7 @@ mpa_boundaries <-
 ## PROCESS SECTION ####################################################################
 ## Filter MPAS we want
 # There are polygons we don't want, like duplicated polygons or the ross sea area
-wdpa_pid_discard <- c("10708",     # Galapagos, same as 11753
+wdpaid_discard <- c("10708",     # Galapagos, same as 11753
                       "312243",    # Old Papahānaumokuākea before expansion
                       "555512062", # Kermadek, ame as 478297
                       "555586806", # Research area, I call BS
@@ -59,6 +59,7 @@ wdpa_pid_discard <- c("10708",     # Galapagos, same as 11753
                       "555586980", # Mid atlantic, same as 555586979
                       "555586981", # Same as above
                       "555587005", # Same as above
+                      "555586970", # Same as above
                       "555622118"  # PNMS, to be implemented in 2020
                       )
 
@@ -67,7 +68,7 @@ wdpa_pid_discard <- c("10708",     # Galapagos, same as 11753
 no_take_lsmpa_boundaries <-
   mpa_boundaries %>%
   filter(no_take %in% c("All", "Part", "Not Reported")) %>%   # Keep only MPAS with a no-take portion
-  # filter(!wdpa_pid %in% wdpa_pid_discard) %>%               # Remove duplicates
+  filter(!wdpaid %in% wdpaid_discard) %>%               # Remove duplicates
   filter(area_km > 100000) %>%                                # Keep areas larger than 10,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
   st_make_valid() %>%                                         # Fix weird polygons
@@ -83,6 +84,11 @@ no_take_lsmpa_boundaries <-
 
 lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs"           # longlat crs proj4string
 mol_crs <- st_crs(no_take_lsmpa_boundaries)$proj4string       # Extract the mollweide crs proj4string
+
+# Export no take LSMPA boundaties
+file.remove(here("data", "no_take_lsmpa_boundaries.gpkg"))
+st_write(obj = no_take_lsmpa_boundaries,
+         dsn = here("data", "no_take_lsmpa_boundaries.gpkg"))
 
 # Visual check #1
 plot(no_take_lsmpa_boundaries, max.plot = 1)
