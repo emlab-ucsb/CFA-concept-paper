@@ -46,13 +46,27 @@ write.csv(x = night_lights_data,
 
 increment <- 5 # Increment, in kilometers
 
+mpas_we_want <- c(309888,    # PIPA
+                  400011,    # PRINM
+                  555624907, # Cook islands
+                  555556875, # Coral Sea
+                  555512151, # British Indian Ocean Territory,
+                  220201,    # Papahānaumokuākea
+                  555547601  # South Georgia and South Sandwich Islands
+                  )
+
 fishing_in_5k_increments <- effort_data %>% 
+  # filter(wdpaid %in% mpas_we_want) %>%
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year > 2016) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
   group_by(best_vessel_class, year, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T)) %>%             # Calculate average
   ungroup() %>% 
+  # group_by(wdpaid, best_vessel_class) %>% 
+  # mutate(n = n()) %>% 
+  # ungroup() %>% 
+  # filter(n > 100) %>% 
   mutate(vessel_class = case_when(
     best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
     best_vessel_class == "trawlers" ~ "Trawlers",
@@ -78,7 +92,7 @@ fishing_the_line_plot <-
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_y_continuous(limits = c(0, NA)) +
   scale_fill_brewer(palette = "Set1") +
-  facet_wrap(~vessel_class, scales = "free_y", ncol = 1) +
+  facet_wrap(~ vessel_class, scales = "free_y", ncol = 1) +
   plot_theme() +
   theme(legend.justification = c(1, 1),
         legend.position = c(1, 1)) +

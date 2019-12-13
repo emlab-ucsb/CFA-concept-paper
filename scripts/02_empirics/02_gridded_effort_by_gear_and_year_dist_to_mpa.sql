@@ -79,7 +79,7 @@ SELECT
   lat,
   lon,
   distance,
-  wdpa_pid_num,
+  wdpaid,
   fishing_hours
 FROM
   gridded_effort_by_gear_and_year
