@@ -46,6 +46,9 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
         lineheight = 0.9,
         margin = margin(),
         debug = FALSE),
+      strip.text = element_text(
+        hjust = 0,
+        size = rel(0.8)),
       plot.title = element_text(
         family = font_family,
         face = "plain",
