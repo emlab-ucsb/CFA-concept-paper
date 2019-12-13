@@ -40,35 +40,46 @@ mpa_boundaries <-
           stringsAsFactors = FALSE,
           as_tibble = TRUE) %>%
   clean_names(case = "snake") %>%                              # Clean column names
-  select(wdpa_pid,                                             # Select features
-                area_km = rep_m_area,
-                no_take,
-                year = status_yr) %>%
-  st_make_valid() %>%                                          # Fix weird polygons
-  st_cast("MULTIPOLYGON")                                      # Cast to multipolygon
+  select(wdpaid,                                              # Select features
+         area_km = rep_m_area,
+         no_take,
+         year = status_yr)
 
 
 
 ## PROCESS SECTION ####################################################################
 ## Filter MPAS we want
 # There are polygons we don't want, like duplicated polygons or the ross sea area
-wdpa_pid_discard <- c("555624810_A",
-                      "555624810_D",
-                      "555624810_E",
-                      "555556875_A")
+wdpa_pid_discard <- c("10708",     # Galapagos, same as 11753
+                      "312243",    # Old Papahānaumokuākea before expansion
+                      "555512062", # Kermadek, ame as 478297
+                      "555586806", # Research area, I call BS
+                      "555586815", # Mariana trench, same as 400010
+                      "555586979", # Mid atlantic, just a US management area
+                      "555586980", # Mid atlantic, same as 555586979
+                      "555586981", # Same as above
+                      "555587005", # Same as above
+                      "555622118"  # PNMS, to be implemented in 2020
+                      )
 
 
 # Filter for only MPAs that include some portion as a no-take and filter by siz
 no_take_lsmpa_boundaries <-
   mpa_boundaries %>%
-  filter(no_take %in% c("All", "Part")) %>%                   # Keep only MPAS with a no-take portion
-  filter(!wdpa_pid %in% wdpa_pid_discard) %>%                 # Remove duplicates
+  filter(no_take %in% c("All", "Part", "Not Reported")) %>%   # Keep only MPAS with a no-take portion
+  # filter(!wdpa_pid %in% wdpa_pid_discard) %>%               # Remove duplicates
   filter(area_km > 100000) %>%                                # Keep areas larger than 10,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
+  st_make_valid() %>%                                         # Fix weird polygons
+  group_by(wdpaid) %>% 
+  summarize(a = 1) %>% 
+  ungroup() %>% 
+  select(-a) %>% 
+  st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
   st_transform(54009) %>%                                     # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
-  mutate(wdpa_pid_num = str_extract(wdpa_pid, "[:digit:]*"),  # Extract the numeric characters only
-         wdpa_pid_num = as.numeric(wdpa_pid_num))             # Transform to numeric
+  mutate(wdpaid_num = str_extract(wdpaid, "[:digit:]*"),      # Extract the numeric characters only
+         wdpaid_num = as.numeric(wdpaid_num))                 # Transform to numeric
 
 lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs"           # longlat crs proj4string
 mol_crs <- st_crs(no_take_lsmpa_boundaries)$proj4string       # Extract the mollweide crs proj4string
@@ -81,7 +92,7 @@ plot(no_take_lsmpa_boundaries, max.plot = 1)
 r <- raster(xmn = -180, xmx = 180, ymn = -90, ymx = 90,
             res = 0.1,                                        # Set resolution
             val = 1,                                          # Assign a value
-            crs = lonlat_crs) %>%                           # Unprojected coords
+            crs = lonlat_crs) %>%                             # Unprojected coords
   projectRaster(crs = mol_crs)
 
 # We will have two raster:
@@ -92,9 +103,10 @@ wdpa_pid_raster <-
   no_take_lsmpa_boundaries %>% 
   st_buffer(100 * 1e3 * 1.854) %>%                             # Create a 100 nm
   st_cast("MULTIPOLYGON") %>%                                  # Cast
-  fasterize(r, field = "wdpa_pid_num") %>%                     # Rasterize
+  fasterize(r, field = "wdpaid_num") %>%                       # Rasterize
   projectRaster(crs = lonlat_crs,
-                res = 0.1)                                     # Reproject to longlat (whan we need for GFW)
+                res = 0.1,
+                method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #2
 plot(wdpa_pid_raster)
@@ -131,7 +143,10 @@ plot(distance_final)
 # The next step is to make the rasters into a table that can be uploaded to GBQ
 # wdpa_pid first
 wdpa_pid_table <- as.data.frame(wdpa_pid_raster, xy = T) %>% 
-  rename(lon = x, lat = y, wdpa_pid_num = layer)
+  rename(lon = x, lat = y, wdpaid_num = layer) %>% 
+  left_join(no_take_lsmpa_boundaries %>% st_set_geometry(NULL) %>% select(contains("wdpaid")),
+            by = "wdpaid_num") %>% 
+  select(-wdpaid_num)
 
 # Now distance
 distance_final_table <- as.data.frame(distance_final, xy = T) %>% 
