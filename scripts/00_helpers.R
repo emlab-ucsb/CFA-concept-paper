@@ -78,9 +78,9 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
       legend.key.size = unit(1, "lines"),
       legend.spacing = unit(0.4, "cm"),
       legend.text = element_text(size = rel(0.8)),
-      panel.background = element_blank(),
-      strip.background = element_blank(),
-      plot.background = element_blank(),
+      panel.background = element_rect(fill = "transparent"),
+      strip.background = element_rect(fill = "transparent"),
+      plot.background = element_rect(fill = "transparent"),
       complete = TRUE
     )
 }
