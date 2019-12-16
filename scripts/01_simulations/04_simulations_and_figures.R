@@ -483,9 +483,10 @@ lazy_ggsave(plot = illegal_harvest_combined_plot,
 
 # 3) Biomass accrual
 
+# Biomass accrual by fine
 w_new <- seq(100, 20000, by = 4000)
 
-biomass_accrual <- expand_grid(L, w_new) %>% 
+biomass_accrual_w <- expand_grid(L, w_new) %>% 
   mutate(results = pmap(.l = list(L = L, w = w_new),
                         .f = wrapper,
                         r = r,
@@ -505,8 +506,8 @@ biomass_accrual <- expand_grid(L, w_new) %>%
   mutate(X_rel = X_r_vec / X_f_vec)
 
 
-biomass_accrual_plot <-
-  ggplot(data = biomass_accrual,
+biomass_accrual_w_plot <-
+  ggplot(data = biomass_accrual_w,
          mapping = aes(x = L, y = X_rel, size = X_vec / K, fill = w_new)) +
   geom_point(shape = 21, alpha = 0.75, color = "black") +
   labs(x = l_legend,
@@ -521,15 +522,98 @@ biomass_accrual_plot <-
   geom_hline(yintercept = 1, linetype = "dashed", size = 1)
 
 
-lazy_ggsave(plot = biomass_accrual_plot,
-            filename = "biomass_accrual_plot",
+lazy_ggsave(plot = biomass_accrual_w_plot,
+            filename = "biomass_accrual_w_plot",
             width = 10,
             height = 6.5)
 
 
+# Biomass accrual by access fee (only include scenarios where legal fishing occurs in the lease area)
+chi_new <- seq(0, 24000, by = 2000)
+
+biomass_accrual_chi <- expand_grid(L, chi_new) %>% 
+  mutate(results = pmap(.l = list(L = L, chi = chi_new),
+                        .f = wrapper,
+                        r = r,
+                        K = K,
+                        X0 = X0,
+                        D = D,
+                        p = p,
+                        q = q,
+                        c = c,
+                        beta = beta,
+                        alpha = alpha,
+                        w = w,
+                        mu = mu,
+                        years = years,
+                        want = "All")) %>% 
+  unnest(cols = results) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec)
 
 
+biomass_accrual_chi_plot <- biomass_accrual_chi %>%
+  dplyr::filter(E_l_vec > 0) %>%
+  ggplot()+
+  aes(x = L, y = X_rel, size = X_vec / K, fill = chi_new) +
+  geom_point(shape = 21, alpha = 0.75, color = "black") +
+  labs(x = l_legend,
+       y = expression(frac(X[R], X[L]))) +
+  scale_fill_viridis_c() +
+  scale_x_continuous(limits = c(0, 1)) +
+  guides(size = guide_legend(title = b_legend),
+         fill = guide_colorbar(title = quote("Access fee ("~chi~")"),
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  plot_theme() +
+  geom_hline(yintercept = 1, linetype = "dashed", size = 1)
 
+
+lazy_ggsave(plot = biomass_accrual_chi_plot,
+            filename = "biomass_accrual_chi_fishingonly_plot",
+            width = 10,
+            height = 6.5)
+
+# show what happens when combinations of chi and L result in no legal fishing
+chi_new_high <- seq(0, 42000, by = 2000)
+
+biomass_accrual_chi_high <- expand_grid(L, chi_new_high) %>% 
+  mutate(results = pmap(.l = list(L = L, chi = chi_new_high),
+                        .f = wrapper,
+                        r = r,
+                        K = K,
+                        X0 = X0,
+                        D = D,
+                        p = p,
+                        q = q,
+                        c = c,
+                        beta = beta,
+                        alpha = alpha,
+                        w = w,
+                        mu = mu,
+                        years = years,
+                        want = "All")) %>% 
+  unnest(cols = results) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec)
+
+biomass_accrual_chi_high_plot <-
+  ggplot(data = biomass_accrual_chi_high,
+         mapping = aes(x = L, y = X_rel, size = X_vec / K, fill = chi_new_high)) +
+  geom_point(shape = 21, alpha = 0.75, color = "black") +
+  labs(x = l_legend,
+       y = expression(frac(X[R], X[L]))) +
+  scale_fill_viridis_c() +
+  scale_x_continuous(limits = c(0, 1)) +
+  guides(size = guide_legend(title = b_legend),
+         fill = guide_colorbar(title = quote("Access fee ("~chi~")"),
+                               frame.colour = "black",
+                               ticks.colour = "black")) +
+  plot_theme() +
+  geom_hline(yintercept = 1, linetype = "dashed", size = 1)
+
+lazy_ggsave(plot = biomass_accrual_chi_high_plot,
+            filename = "biomass_accrual_chi_all_plot",
+            width = 10,
+            height = 6.5)
 
 
 
