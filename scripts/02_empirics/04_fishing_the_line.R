@@ -46,33 +46,32 @@ write.csv(x = night_lights_data,
 
 increment <- 5 # Increment, in kilometers
 
-mpas_we_want <- c(309888,    # PIPA
-                  400011,    # PRINM
-                  555624907, # Cook islands
-                  555556875, # Coral Sea
-                  555512151, # British Indian Ocean Territory,
-                  220201,    # Papahānaumokuākea
-                  555547601  # South Georgia and South Sandwich Islands
-                  )
-
-fishing_in_5k_increments <- effort_data %>% 
-  # filter(wdpaid %in% mpas_we_want) %>%
+fishing_in_5k_increments <- 
+  effort_data %>% 
+  filter(!wdpaid %in% c(555556875)) %>%
+  filter(best_vessel_class == "drifting_longlines") %>%
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year > 2016) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
-  group_by(best_vessel_class, year, dist) %>%                         # Define grouping variables
-  summarize(fishing = mean(fishing_hours, na.rm = T)) %>%             # Calculate average
+  group_by(iucn_cat, dist) %>%                         # Define grouping variables
+  summarize(fishing = mean(fishing_hours, na.rm = T),
+            sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
   ungroup() %>% 
   # group_by(wdpaid, best_vessel_class) %>% 
   # mutate(n = n()) %>% 
   # ungroup() %>% 
   # filter(n > 100) %>% 
-  mutate(vessel_class = case_when(
-    best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
-    best_vessel_class == "trawlers" ~ "Trawlers",
-    best_vessel_class == "tuna_purse_seines" ~ "Tuna purse seines"
-    ),
-    year = as.factor(year))
+  mutate(
+    # vessel_class = case_when(
+    # best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
+    # best_vessel_class == "trawlers" ~ "Trawlers",
+    # best_vessel_class == "tuna_purse_seines" ~ "Tuna purse seines"
+    # ),
+    iucn_cat = case_when(iucn_cat == 1 ~ "Ia",
+                         iucn_cat == 2 ~ "II",
+                         T ~ "Others (III - VI)"),
+    inside = dist <= 0) %>%
+  ungroup()
 
 night_lights_in_10k_increments <- night_lights_data %>% 
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
@@ -86,19 +85,20 @@ night_lights_in_10k_increments <- night_lights_data %>%
 # Create figure
 fishing_the_line_plot <- 
   ggplot(data = fishing_in_5k_increments,
-         aes(x = dist, y = fishing, color = year)) +
+         aes(x = dist, y = fishing)) +
   geom_smooth(method = "loess", se = F, color = "black") +
-  geom_point(aes(fill = year), color = "black", shape = 21, size = 2) +
+  geom_point(fill = "steelblue", color = "black", shape = 21, size = 2) +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_y_continuous(limits = c(0, NA)) +
   scale_fill_brewer(palette = "Set1") +
-  facet_wrap(~ vessel_class, scales = "free_y", ncol = 1) +
+  facet_wrap( ~ iucn_cat) +
   plot_theme() +
   theme(legend.justification = c(1, 1),
         legend.position = c(1, 1)) +
   guides(fill = guide_legend("Year")) +
   labs(x = "Distance from border (Km)",
-       y = "Fishing effort (mean fishing hours per bin)")
+       y = "Mean fishing effort (hours)")
+
+fishing_the_line_plot
 
 fishing_the_line_night_lights_plot <- 
   ggplot(data = night_lights_in_10k_increments,
@@ -117,7 +117,7 @@ fishing_the_line_night_lights_plot <-
 # Export figure
 lazy_ggsave(plot = fishing_the_line_plot,
             filename = "fishing_the_line_plot",
-            height = 7, width = 3.5)
+            height = 3, width = 6)
 
 lazy_ggsave(plot = fishing_the_line_night_lights_plot,
             filename = "fishing_the_line_night_lights_plot",

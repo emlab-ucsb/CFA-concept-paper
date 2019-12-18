@@ -38,7 +38,8 @@ SELECT
   sum_rad,
   avg_rad,
   distance,
-  wdpa_pid_num
+  wdpaid,
+  iucn_cat
 FROM
   radiance
 LEFT JOIN

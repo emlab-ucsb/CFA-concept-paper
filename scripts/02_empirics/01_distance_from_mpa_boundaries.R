@@ -41,6 +41,8 @@ mpa_boundaries <-
           as_tibble = TRUE) %>%
   clean_names(case = "snake") %>%                              # Clean column names
   select(wdpaid,                                              # Select features
+         name,
+         iucn_cat,
          area_km = rep_m_area,
          no_take,
          year = status_yr)
@@ -51,36 +53,47 @@ mpa_boundaries <-
 ## Filter MPAS we want
 # There are polygons we don't want, like duplicated polygons or the ross sea area
 wdpaid_discard <- c("10708",     # Galapagos, same as 11753
-                      "312243",    # Old Papahānaumokuākea before expansion
-                      "555512062", # Kermadek, ame as 478297
-                      "555586806", # Research area, I call BS
-                      "555586815", # Mariana trench, same as 400010
-                      "555586979", # Mid atlantic, just a US management area
-                      "555586980", # Mid atlantic, same as 555586979
-                      "555586981", # Same as above
-                      "555587005", # Same as above
-                      "555586970", # Same as above
-                      "555622118"  # PNMS, to be implemented in 2020
-                      )
+                    "312243",    # Old Papahānaumokuākea before expansion
+                    "555512062", # Kermadek, same as 478297
+                    "555586815", # Mariana trench, same as 400010
+                    "555622118", # PNMS, to be implemented in 2020
+                    "2628")
 
+no_takes <- c("309888", # PIPA is no take for industrials
+              "400011") # PRINMS is no take for industrials
 
+take <- c("555586806", # Research area, I call BS
+          "555586979", # Mid atlantic, just a US management area
+          "555586980", # Mid atlantic, same as 555586979
+          "555586981", # Same as above
+          "555587005", # Same as above
+          "555586970", # Same as above
+          "555512241", # Charlie-Gibbs South High Seas MPA in Areas Beyond National Jurisdiction
+          "555557228") # Charlie-Gibbs North High Seas MPA in Areas Beyond National Jurisdiction
+          
 # Filter for only MPAs that include some portion as a no-take and filter by siz
 no_take_lsmpa_boundaries <-
   mpa_boundaries %>%
-  filter(no_take %in% c("All", "Part", "Not Reported")) %>%   # Keep only MPAS with a no-take portion
-  filter(!wdpaid %in% wdpaid_discard) %>%               # Remove duplicates
+  filter(!wdpaid %in% wdpaid_discard) %>%                     # Remove duplicates
   filter(area_km > 100000) %>%                                # Keep areas larger than 10,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
+  mutate(iucn_cat = ifelse(wdpaid %in% no_takes,
+                           "Ia",
+                           iucn_cat)) %>% 
   st_make_valid() %>%                                         # Fix weird polygons
-  group_by(wdpaid) %>% 
+  group_by(wdpaid, name, no_take, iucn_cat) %>%
   summarize(a = 1) %>% 
   ungroup() %>% 
   select(-a) %>% 
   st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
-  st_transform(54009) %>%                                     # Reproject to Mollweide (https://epsg.io/54009)
+  st_transform(crs = 54009) %>%                               # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
-  mutate(wdpaid_num = str_extract(wdpaid, "[:digit:]*"),      # Extract the numeric characters only
-         wdpaid_num = as.numeric(wdpaid_num))                 # Transform to numeric
+  mutate(iucn_cat = ifelse(iucn_cat %in% c("Ia", "II"),
+                           iucn_cat,
+                           "Others (III - VI)"),
+         iucn_cat_rast = case_when(iucn_cat == "Ia" ~ 1,
+                                   iucn_cat == "II" ~ 2,
+                                   iucn_cat == "Others (III - VI)" ~ 3))
 
 lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs"           # longlat crs proj4string
 mol_crs <- st_crs(no_take_lsmpa_boundaries)$proj4string       # Extract the mollweide crs proj4string
@@ -91,7 +104,7 @@ st_write(obj = no_take_lsmpa_boundaries,
          dsn = here("data", "no_take_lsmpa_boundaries.gpkg"))
 
 # Visual check #1
-plot(no_take_lsmpa_boundaries, max.plot = 1)
+plot(no_take_lsmpa_boundaries[, "iucn_cat"])
 
 ## Rassterization
 # The first step is to create a reference raster that covers the whole world
@@ -101,22 +114,35 @@ r <- raster(xmn = -180, xmx = 180, ymn = -90, ymx = 90,
             crs = lonlat_crs) %>%                             # Unprojected coords
   projectRaster(crs = mol_crs)
 
-# We will have two raster:
+# We will have three rasters:
 # - One with the identity of each polygon
+# - One with the category of each polygon
 # - One with the distance to each boundary
 # First ,the identity one
-wdpa_pid_raster <- 
+wdpaid_raster <- 
   no_take_lsmpa_boundaries %>% 
-  st_buffer(100 * 1e3 * 1.854) %>%                             # Create a 100 nm
+  st_buffer(100 * 1e3 * 1.854) %>%                             # Create a 100 nm buffer
   st_cast("MULTIPOLYGON") %>%                                  # Cast
-  fasterize(r, field = "wdpaid_num") %>%                       # Rasterize
+  fasterize(r, field = "wdpaid") %>%                           # Rasterize
   projectRaster(crs = lonlat_crs,
                 res = 0.1,
                 method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #2
-plot(wdpa_pid_raster)
+plot(wdpaid_raster)
 
+# Now the one with IUCN categories
+iucn_cat_raster <- 
+  no_take_lsmpa_boundaries %>% 
+  st_buffer(100 * 1e3 * 1.854) %>%                             # Create a 100 nm buffer
+  st_cast("MULTIPOLYGON") %>%                                  # Cast
+  fasterize(r, field = "iucn_cat_rast") %>%                    # Rasterize
+  projectRaster(crs = lonlat_crs,
+                res = 0.1,
+                method = "ngb")                                # Reproject to longlat (whan we need for GFW)
+
+# Visual check #3
+plot(iucn_cat_raster)
 
 # Now, we'll create the distance to border raster.
 # This will be composed of two rasters:
@@ -125,7 +151,7 @@ plot(wdpa_pid_raster)
 outside_raster <- fasterize(no_take_lsmpa_boundaries, r)        # Rasterize the boundaries
 distance_outside <- distance(outside_raster)                    # Calculate the distance to the boundaries
 
-# Visual check #3
+# Visual check #4
 plot(distance_outside)
 
 # Now we repeat the process but calculate distance form inside (negative numbers)
@@ -133,7 +159,7 @@ inside_raster <- is.na(outside_raster)                          # A raster with 
 inside_raster[inside_raster == 0] <- NA                         # Replace 0 (inside) with NAs to be filled in
 distance_inside <- - distance(inside_raster)                    # Calculate distance to border (note the "-")
 
-# Visual check #4
+# Visual check #5
 plot(distance_inside)
 
 # We'll now combine both
@@ -142,24 +168,25 @@ distance_raster[distance_inside < 0] <- distance_inside[distance_inside < 0]
 distance_final <- projectRaster(distance_raster, crs = lonlat_crs, res = 0.1)
 distance_final[distance_final > 100 * 1e3 * 1.854] <- NA
 
-# Visual check #5
+# Visual check #6
 plot(distance_final)
 
 ## TABULIZE ################################################################################
 # The next step is to make the rasters into a table that can be uploaded to GBQ
 # wdpa_pid first
-wdpa_pid_table <- as.data.frame(wdpa_pid_raster, xy = T) %>% 
-  rename(lon = x, lat = y, wdpaid_num = layer) %>% 
-  left_join(no_take_lsmpa_boundaries %>% st_set_geometry(NULL) %>% select(contains("wdpaid")),
-            by = "wdpaid_num") %>% 
-  select(-wdpaid_num)
+wdpa_pid_table <- as.data.frame(wdpaid_raster, xy = T) %>% 
+  rename(lon = x, lat = y, wdpaid = layer)
+
+iucn_cat_table <- as.data.frame(iucn_cat_raster, xy = T) %>% 
+  rename(lon = x, lat = y, iucn_cat = layer)
 
 # Now distance
 distance_final_table <- as.data.frame(distance_final, xy = T) %>% 
   rename(lon = x, lat = y, distance = layer)
 
 # Cobmine them
-output_table <- left_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>% 
+output_table <- left_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>%
+  left_join(iucn_cat_table, by = c("lon", "lat")) %>% 
   mutate_at(vars(lon, lat), function(x){(floor(x / 0.1) * 0.1) + 0.05}) %>% 
   drop_na(distance)
 

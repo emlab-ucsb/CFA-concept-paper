@@ -80,6 +80,7 @@ SELECT
   lon,
   distance,
   wdpaid,
+  iucn_cat,
   fishing_hours
 FROM
   gridded_effort_by_gear_and_year
