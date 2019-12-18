@@ -77,9 +77,10 @@ no_take_lsmpa_boundaries <-
   filter(!wdpaid %in% wdpaid_discard) %>%                     # Remove duplicates
   filter(area_km > 100000) %>%                                # Keep areas larger than 10,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
-  mutate(iucn_cat = ifelse(wdpaid %in% no_takes,
-                           "Ia",
-                           iucn_cat)) %>% 
+  mutate(iucn_cat = case_when(wdpaid == 309888 ~ "Ib",
+                              wdpaid == 400011 ~ "Ib",
+                              wdpaid == 11753 ~ "IV",
+                              T ~ iucn_cat)) %>% 
   st_make_valid() %>%                                         # Fix weird polygons
   group_by(wdpaid, name, no_take, iucn_cat) %>%
   summarize(a = 1) %>% 
@@ -88,12 +89,13 @@ no_take_lsmpa_boundaries <-
   st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
   st_transform(crs = 54009) %>%                               # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
-  mutate(iucn_cat = ifelse(iucn_cat %in% c("Ia", "II"),
-                           iucn_cat,
-                           "Others (III - VI)"),
-         iucn_cat_rast = case_when(iucn_cat == "Ia" ~ 1,
+  mutate(iucn_cat_rast = case_when(iucn_cat %in% c("Ia", "Ib") ~ 1,
                                    iucn_cat == "II" ~ 2,
-                                   iucn_cat == "Others (III - VI)" ~ 3))
+                                   iucn_cat == "III" ~ 3,
+                                   iucn_cat == "IV" ~ 4,
+                                   iucn_cat == "V" ~ 5,
+                                   iucn_cat == "VI" ~ 6,
+                                   T ~ 7))
 
 lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs"           # longlat crs proj4string
 mol_crs <- st_crs(no_take_lsmpa_boundaries)$proj4string       # Extract the mollweide crs proj4string
