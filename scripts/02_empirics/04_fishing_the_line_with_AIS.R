@@ -24,20 +24,10 @@ effort_table <-
            dataset = "ocean_halos_v2",
            table = "gridded_effort_by_gear_and_year_dist_to_mpa")
 
-night_lights_table <- 
-  bq_table(project = ucsb_project,
-           dataset = "ocean_halos_v2",
-           table = "gridded_night_lights_by_year_dist_to_mpa")
-
 # Download the data (and export it)
 effort_data <- bigrquery::bq_table_download(x = effort_table)
 write.csv(x = effort_data,
           file = here("data", "gridded_effort_by_gear_and_year_dist_to_mpa.csv"),
-          row.names = F)
-
-night_lights_data <- bigrquery::bq_table_download(x = night_lights_table)
-write.csv(x = night_lights_data,
-          file = here("data", "gridded_night_lights_by_year_dist_to_mpa.csv"),
           row.names = F)
 
 # Modify the data for plotting purposes
@@ -53,34 +43,15 @@ fishing_in_5k_increments <-
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year > 2016) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
+  mutate(iucn_cat = case_when(iucn_cat %in% c(1, 2) ~ "I - II",
+                              iucn_cat %in% c(3, 4) ~ "II - III",
+                              T ~ "Others (IV - VI)")) %>% 
   group_by(iucn_cat, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T),
             sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
   ungroup() %>% 
-  # group_by(wdpaid, best_vessel_class) %>% 
-  # mutate(n = n()) %>% 
-  # ungroup() %>% 
-  # filter(n > 100) %>% 
-  mutate(
-    # vessel_class = case_when(
-    # best_vessel_class == "drifting_longlines" ~ "Drifting longlines",
-    # best_vessel_class == "trawlers" ~ "Trawlers",
-    # best_vessel_class == "tuna_purse_seines" ~ "Tuna purse seines"
-    # ),
-    iucn_cat = case_when(iucn_cat == 1 ~ "Ia",
-                         iucn_cat == 2 ~ "II",
-                         T ~ "Others (III - VI)"),
-    inside = dist <= 0) %>%
+  mutate(inside = dist <= 0) %>%
   ungroup()
-
-night_lights_in_10k_increments <- night_lights_data %>% 
-  filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
-  filter(year > 2016) %>% 
-  mutate(dist = round(distance / (10 * 1e3)) * 10) %>%  # Mutate the distance to group by a common bin
-  group_by(year, dist) %>%                                            # Define grouping variables
-  summarize(rad = sum(sum_rad, na.rm = T)) %>%                        # Calculate total
-  ungroup() %>% 
-  mutate(year = as.factor(year))
 
 # Create figure
 fishing_the_line_plot <- 
@@ -100,28 +71,65 @@ fishing_the_line_plot <-
 
 fishing_the_line_plot
 
-fishing_the_line_night_lights_plot <- 
-  ggplot(data = night_lights_in_10k_increments,
-       aes(x = dist, y = rad / 1e4, color = year)) +
-  geom_smooth(method = "loess", se = F, color = "black") +
-  geom_point(aes(fill = year), color = "black", shape = 21, size = 2) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_fill_brewer(palette = "Set1") +
-  scale_y_continuous(limits = c(0, NA)) +
-  plot_theme() +
-  guides(fill = guide_legend(title = "Year")) +
-  labs(x = "Distance from border (Km)",
-       y = "Total radiance (x1e4 nW/cm2/sr)")
-
 
 # Export figure
 lazy_ggsave(plot = fishing_the_line_plot,
             filename = "fishing_the_line_plot",
             height = 3, width = 6)
 
-lazy_ggsave(plot = fishing_the_line_night_lights_plot,
-            filename = "fishing_the_line_night_lights_plot",
-            height = 2.5, width = 3.5)
-
 # END OF SCRIPT 
+
+
+
+# Cherry picking
+effort_data %>% 
+  filter(!wdpaid %in% c(555556875)) %>%
+  filter(best_vessel_class %in% c("tuna_purse_seines", "drifting_longlines")) %>%
+  filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
+  filter(year > 2016) %>% 
+  mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
+  mutate(iucn_cat = case_when(wdpaid %in% c(309888, 400011, 	220201) ~ "PIPA, PRINMS, PNMS",
+                              wdpaid %in% c(555629385, 11753) ~ "Galapagos, Revillagigedo",
+                              T ~ "Others (IV - VI)")) %>% 
+  filter(! iucn_cat == "Others (IV - VI)") %>% 
+  group_by(iucn_cat, dist) %>%                         # Define grouping variables
+  summarize(fishing = mean(fishing_hours, na.rm = T),
+            sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
+  ungroup() %>% 
+  mutate(iucn_cat_2 = case_when(iucn_cat == 1 ~ "Ia",
+                                iucn_cat == 2 ~ "II",
+                                iucn_cat == 3 ~ "III",
+                                iucn_cat == 4 ~ "IV",
+                                iucn_cat == 5 ~ "V",
+                                iucn_cat == 6 ~ "VI", 
+                                iucn_cat == 7 ~ "Others"),
+         inside = dist <= 0) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = dist, y = fishing)) +
+  geom_smooth(method = "loess", se = F, color = "black") +
+  geom_point(fill = "steelblue", color = "black", shape = 21, size = 2) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set1") +
+  facet_grid( ~ iucn_cat, scales = "free_y") +
+  plot_theme() +
+  theme(legend.justification = c(1, 1),
+        legend.position = c(1, 1)) +
+  guides(fill = guide_legend("Year")) +
+  labs(x = "Distance from border (Km)",
+       y = "Mean fishing effort (hours)")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
