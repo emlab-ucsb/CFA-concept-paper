@@ -33,15 +33,15 @@ e_legend <- "Equilibrium\neffort"
 ### BIOMASS HEAT MAPS
 ### -----------------
 
-L <- seq(0.1, 1, length.out = 50)
+L <- seq(0.1, 1, by = 0.01)
 
 # 1) Equilibrium biomass as a function of lease area (L) and enforcement coefficient (mu)
 
 mu_new <- seq(0.00005, 0.01, by = 0.0002)
 
-B_L_v_mu <- expand_grid(L, mu_new) %>% 
-  mutate(equil_b = pmap_dbl(.l = list(L = L, mu = mu_new),
-                            .f = wrapper,
+optim_B_mu <- expand_grid(L, mu_new) %>% 
+  mutate(results = pmap_dbl(.l = list(L = L, mu = mu_new),
+                            .f = biomass_optim_wrapper,
                             r = r,
                             K = K,
                             X0 = X0,
@@ -52,9 +52,9 @@ B_L_v_mu <- expand_grid(L, mu_new) %>%
                             beta = beta,
                             alpha = alpha,
                             w = w,
-                            chi = chi,
                             years = years,
-                            want = "X_vec"))
+                            want = "All")) %>%
+  unnest(cols = results)
 
 # 2) Equilibrium biomass as a function of lease area (L) and fine (W)
 
