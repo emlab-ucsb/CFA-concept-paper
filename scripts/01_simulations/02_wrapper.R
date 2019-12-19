@@ -8,20 +8,83 @@
 # 
 ################################################################
 
-wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years, want = "X_vec"){
+wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, want = "X_vec"){
   
   if(!want == "All"){
-    value <- 
-      model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
+    value <- model(chi = chi,
+                   r = r,
+                   K = K,
+                   X0 = X0,
+                   D = D,
+                   p = p,
+                   q = q,
+                   c = c,
+                   beta = beta,
+                   L = L,
+                   alpha = alpha,
+                   mu = mu,
+                   w = w,
+                   years = years,
+                   tolerance = 0.05) %>%     # run the model
       filter(time == max(time)) %>%                                          # keep the last timestep only
       pull({{want}})                                                         # return desired variable 
   } else {
-    value <- 
-      model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>%     # run the model
+    value <- model(chi = chi,
+                   r = r,
+                   K = K,
+                   X0 = X0,
+                   D = D,
+                   p = p,
+                   q = q,
+                   c = c,
+                   beta = beta,
+                   L = L,
+                   alpha = alpha,
+                   mu = mu,
+                   w = w,
+                   years = years,
+                   tolerance = 0.05) %>%     # run the model
       filter(time == max(time))                                              # keep the last timestep only
   }
   
   return(value)                                                            # Return the value
+}
+
+# Optimization wraper 2.0
+get_chi <- function(chi, pars){
+  
+  # Extract non-optimization parameters
+  r <- pars$r
+  K <- pars$K
+  X0 <- pars$X0
+  D <- pars$D
+  p <- pars$p
+  q <- pars$q
+  c <- pars$c
+  beta <- pars$beta
+  L <- pars$L
+  alpha <- pars$alpha
+  mu <- pars$mu
+  w <- pars$w
+  years <- pars$years
+  
+  # Run the scenario with a given chi
+  biomass <- wrapper(chi = chi,
+                     r = r,
+                     K = K,
+                     X0 = X0,
+                     D = D,
+                     p = p,
+                     q = q,
+                     c = c,
+                     beta = beta,
+                     L = L,
+                     alpha = alpha,
+                     mu = mu,
+                     w = w,
+                     years = years)
+  
+  return(biomass)
 }
 
 ################################################################
