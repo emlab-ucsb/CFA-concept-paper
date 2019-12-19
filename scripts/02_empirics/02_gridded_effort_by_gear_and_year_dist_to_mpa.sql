@@ -25,8 +25,7 @@ WITH
     `world-fishing-827.gfw_research.vi_ssvid_v20190430`
   WHERE
     best.best_vessel_class IN ("tuna_purse_seines",
-      "drifting_longlines",
-      "trawlers")
+      "drifting_longlines")
     AND on_fishing_list_best
     AND activity.active_hours > 0),
   #

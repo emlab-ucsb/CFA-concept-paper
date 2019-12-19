@@ -48,7 +48,7 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
         debug = FALSE),
       strip.text = element_text(
         hjust = 0,
-        size = rel(0.8)),
+        size = rel(0.8), margin = margin(b = 10)),
       plot.title = element_text(
         family = font_family,
         face = "plain",
@@ -78,9 +78,9 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
       legend.key.size = unit(1, "lines"),
       legend.spacing = unit(0.4, "cm"),
       legend.text = element_text(size = rel(0.8)),
-      panel.background = element_rect(fill = "transparent"),
-      strip.background = element_rect(fill = "transparent"),
-      plot.background = element_rect(fill = "transparent"),
+      panel.background = element_rect(fill = "transparent", color = "transparent"),
+      strip.background = element_rect(fill = "transparent", color = "transparent"),
+      plot.background = element_rect(fill = "transparent", color = "transparent"),
       complete = TRUE
     )
 }
