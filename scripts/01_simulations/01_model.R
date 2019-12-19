@@ -40,7 +40,7 @@
 # 
 ################################################################
 
-model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, tolerance = 0.05, purpose = "run") {
+model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, tolerance = 0.05) {
   
   # Define vectors to store state variables through time
   X_vec <-
@@ -155,12 +155,6 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
       H_f_vec
     )
   
-  if(purpose != "optim"){
-    
-    return(results)                 # Return the results as a table                                                                             
-  }else if(purpose == "optim"){
-    
-    return(-log(X_vec[time]))            # Return the results as a table
-    
-  }
+  return(results)                 # Return the results as a table                                                                             
+
 }
