@@ -75,7 +75,7 @@ take <- c("555586806", # Research area, I call BS
 no_take_lsmpa_boundaries <-
   mpa_boundaries %>%
   filter(!wdpaid %in% wdpaid_discard) %>%                     # Remove duplicates
-  filter(area_km > 100000) %>%                                # Keep areas larger than 10,000 Km2
+  filter(area_km > 1e5) %>%                                   # Keep areas larger than 10,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
   mutate(iucn_cat = case_when(wdpaid == 309888 ~ "Ib",
                               wdpaid == 400011 ~ "Ib",
