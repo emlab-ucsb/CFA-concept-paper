@@ -79,6 +79,10 @@ for(i in 1:length(Ls)){
 best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b) %>% 
   mutate(index = as.numeric(row.names(.)))                                     # I will use this column to join later
 
+write.csv(x = best_results,
+          file = here("results", "best_combination_of_L_and_Chi.csv"),
+          row.names = F)
+
 # Create a plot of L vs B
 optimal_fee_for_L_plot <- 
   ggplot(data = best_results,
