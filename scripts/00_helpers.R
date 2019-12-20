@@ -8,8 +8,24 @@
 #### MODEL STUFF ####
 # The function below returns a panel figure
 # with all state variables through time
-fast_check <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) {
-  model(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi, years) %>% 
+fast_check <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, tolerance = 0.05) {
+  model(
+    chi = chi,
+    r = r,
+    K = K,
+    X0 = X0,
+    D = D,
+    p = p,
+    q = q,
+    c = c,
+    beta = beta,
+    L = L,
+    alpha = alpha,
+    mu = mu,
+    w = w,
+    years = years,
+    tolerance = tolerance
+  ) %>%
     mutate_at(.vars = vars(X_r_vec, X_f_vec), .funs =  ~ . / (K / 2)) %>% 
     mutate(X_vec = X_vec / K) %>% 
     gather(variable, value, - time) %>% 

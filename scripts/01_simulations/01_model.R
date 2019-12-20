@@ -63,7 +63,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
   
   K_new <- K/2
   
-  #### Wild assumption 1: Initial budget depends on access fee revenues only
+  #### Initial budget depends on access fee revenues only
   E_i <- 0
   theta <- 0
   
@@ -91,6 +91,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     H_in <- q * X_r * (1 - L) * E_in                                                                     # Illegal harvest in no-take
     H_il <- q * X_r * L * (1 - (q * E_l)) * E_il                                                         # Illegal harvest in lease area
     H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
+    
     
     # Growth in each area
     X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_new)))  - H_f                                           # Gordon-Schafer
@@ -121,10 +122,9 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
   
   
   # Check that equilibrium was reached
-  if(!near(
-    X_vec[i-1],
-    X_vec[i],
-    tol = tolerance * X_vec[i])) {
+  if(!near(X_vec[i-1],
+           X_vec[i],
+           tol = tolerance * X_vec[i])) {
     message <- paste("Equilibrium was not reached!",
                      "\n==========================\n",
                      "These were the parameters:\n",
@@ -132,7 +132,10 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
                      "alpha =", alpha, "\n",
                      "mu    =", mu, "\n",
                      "w     = ", w, "\n",
-                     "chi   = ", chi, "\n"
+                     "chi   = ", chi, "\n",
+                     "Failing with last two values of biomass of:\n",
+                     "X_t-1 = ", X_vec[i - 1], "\n",
+                     "X_t = ", X_vec[i], "\n"
                      )
     warning(message)
     }
