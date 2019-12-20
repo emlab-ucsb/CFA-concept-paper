@@ -253,7 +253,7 @@ L_X_and_dispersal <-
                         X0 = X0,
                         p = p,
                         q = q,
-                        c = 3000,
+                        c = c,
                         beta = beta,
                         alpha = alpha,
                         mu = mu,

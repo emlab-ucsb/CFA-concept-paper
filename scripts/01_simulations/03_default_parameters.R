@@ -25,7 +25,7 @@ L <- 0.7                  # Size of the lease zone
 alpha <- 9000             # Marginal cost of enforcement
 mu <- 5e-4                # Enforcement coefficient
 w <- 1.5 * c                # Per-unit-effort fine
-chi <- 500              # Per-unit-access fee
+chi <- 200              # Per-unit-access fee
 
 ## Duration of simulation
 years <- 50L              # *Duration of simulaionS
