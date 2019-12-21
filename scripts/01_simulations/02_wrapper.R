@@ -8,7 +8,7 @@
 # 
 ################################################################
 
-wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, want = "X_vec"){
+wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, want = "X_vec", b = 0){
   
   if(!want == "All"){
     value <- model(chi = chi,
@@ -25,7 +25,8 @@ wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, wan
                    mu = mu,
                    w = w,
                    years = years,
-                   tolerance = 0.05) %>%     # run the model
+                   tolerance = 0.05,
+                   b = b) %>%     # run the model
       filter(time == max(time)) %>%                                          # keep the last timestep only
       pull({{want}})                                                         # return desired variable 
   } else {
@@ -43,7 +44,8 @@ wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, wan
                    mu = mu,
                    w = w,
                    years = years,
-                   tolerance = 0.05) %>%     # run the model
+                   tolerance = 0.05,
+                   b = b) %>%     # run the model
       filter(time == max(time))                                              # keep the last timestep only
   }
   
@@ -67,6 +69,7 @@ get_chi <- function(chi, pars){
   mu <- pars$mu
   w <- pars$w
   years <- pars$years
+  b <- pars$b
   
   # Run the scenario with a given chi
   biomass <- wrapper(chi = chi,
@@ -82,7 +85,8 @@ get_chi <- function(chi, pars){
                      alpha = alpha,
                      mu = mu,
                      w = w,
-                     years = years)
+                     years = years,
+                     b = b)
   
   return(biomass)
 }

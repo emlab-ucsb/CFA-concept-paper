@@ -42,10 +42,11 @@ for(i in 1:length(Ls)){
                alpha = alpha,
                mu = mu,
                w = w,
-               years = years)
+               years = years,
+               b = b)
   
   # Call optim
-  opt_results <- optim(par = 0,                      # Guess that we know works (OA equilibrium)
+  opt_results <- optim(par = 1,                      # Guess that we know works (OA equilibrium)
                        fn = get_chi,                 # Function to call
                        pars = pars,                  # All other parametrs passed as a list, and extracted in wraper
                        control = list(fnscale = -1), # Indicate that we are maximizing
@@ -68,7 +69,9 @@ for(i in 1:length(Ls)){
                       alpha = alpha,
                       mu = mu,
                       w = w,
-                      years = years, want = "All") %>% 
+                      years = years,
+                      want = "All",
+                      b = b) %>% 
     mutate(X_rel = X_r_vec / X_f_vec) %>% 
     pull(X_rel)
   

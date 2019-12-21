@@ -40,7 +40,7 @@
 # 
 ################################################################
 
-model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, tolerance = 0.05) {
+model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, tolerance = 0.05, b = 0) {
   
   # Define vectors to store state variables through time
   X_vec <-
@@ -78,7 +78,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     # Selection of effort
     E_f <- max(((p * q * X_f) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                             # Fishing effort in fishing zone
     E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                 # Legal fishing effort in lease zone
-    E_e <- ((E_l * chi) + (theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
+    E_e <- (b + (E_l * chi) + (theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
     theta <- 1 - exp(-mu * E_e)                                                                           # Probability of detection given enforcement
     E_in <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort in no-take
     E_il <- max((((p * q * X_r * L * (1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)   # Illegal fishing effort in lease area
