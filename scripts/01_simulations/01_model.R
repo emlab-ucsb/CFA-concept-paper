@@ -86,15 +86,15 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     E_f <- max(((p * q * X_f) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                             # Fishing effort in fishing zone
     H_f <- q * X_f * E_f   
     
+    # Selection of lease zone legal effort and harvest
+    E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta-1)), 0, na.rm = T)
+    H_l <- q * X_r * L * E_l  
+    
     # Selection of illegal effort and harvest
-    E_i <- max((((p * q * X_r) - (theta * w)) / (beta * c)) ^ (1 / (beta -1)), 0, na.rm = T)
-    H_i <- q * X_r * E_i
+    E_i <- max((((p * q * (X_r - H_l)) - (theta * w)) / (beta * c)) ^ (1 / (beta -1)), 0, na.rm = T)
+    H_i <- q * (X_r - H_l) * E_i
     H_in <- H_i * (1-L) #q * X_r * (1 - L) * E_in                                                                     # Illegal harvest in no-take
     H_il <- H_i * L #q * X_r * L * (1 - (q * E_l)) * E_il             
-    
-    # Selection of lease zone legal effort and harvest
-    E_l <- max((((p * q * (X_r - H_i) * L) - chi) / (beta * c)) ^ (1 / (beta-1)), 0, na.rm = T)
-    H_l <- q * (X_r - H_i) * L * E_l  
     
     # Total reserve harvest
     H_r <- H_l + H_in + H_il       # Total harvest in reserve
