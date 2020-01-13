@@ -24,7 +24,7 @@ b_legend <- "Equilibrium\nbiomass\n(X / K)"
 
 # Find best Chi for a given L (and default parameters)
 Ls <- seq(0.05, 1, by = 0.05)                           # Define a vector of L values
-opt_par <- opt_val <- rel_b <- numeric(length(Ls))      # Define state variables
+opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- numeric(length(Ls))      # Define state variables
 
 # Beginf or loop to iterate across all L values
 for(i in 1:length(Ls)){
@@ -56,35 +56,47 @@ for(i in 1:length(Ls)){
   
   opt_par[i] <- opt_results$par                      # Save best chi
   opt_val[i] <- opt_results$value                    # Save corresponding biomass value
-  rel_b[i] <- wrapper(chi = opt_results$par,         # Call the simulation to calculate B_r / B_f
-                      r = r,
-                      K = K,
-                      X0 = X0,
-                      D = D,
-                      p = p,
-                      q = q,
-                      c = c,
-                      beta = beta,
-                      L = Ls[i],
-                      alpha = alpha,
-                      mu = mu,
-                      w = w,
-                      years = years,
-                      want = "All",
-                      b = b) %>% 
-    mutate(X_rel = X_r_vec / X_f_vec) %>% 
+  
+  run <- wrapper(chi = opt_results$par,         # Call the simulation to calculate B_r / B_f
+                 r = r,
+                 K = K,
+                 X0 = X0,
+                 D = D,
+                 p = p,
+                 q = q,
+                 c = c,
+                 beta = beta,
+                 L = Ls[i],
+                 alpha = alpha,
+                 mu = mu,
+                 w = w,
+                 years = years,
+                 want = "All",
+                 b = b) %>% 
+    mutate(X_rel = X_r_vec / X_f_vec)
+  
+  rel_b[i] <- run %>% 
     pull(X_rel)
+  
+  rel_e_i[i] <- run %>%
+    pull(E_i_vec)
+  
+  rel_e_l[i] <- run %>%
+    pull(E_l_vec)
+  
+  rel_e_e[i] <- run %>%
+    pull(E_e_vec)
   
 }
 
 
 # Put the results together into a tibble
-best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b) %>% 
+best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e) %>% 
   mutate(index = as.numeric(row.names(.)))                                     # I will use this column to join later
 
-write.csv(x = best_results,
-          file = here("results", "best_combination_of_L_and_Chi.csv"),
-          row.names = F)
+# write.csv(x = best_results,
+#           file = here("results", "best_combination_of_L_and_Chi.csv"),
+#           row.names = F)
 
 # Create a plot of L vs B
 optimal_fee_for_L_plot <- 
