@@ -117,7 +117,7 @@ optimal_fee_for_L_plot
 
 # Different fines
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(10000, 20000, 40000, 80000)) %>% 
+                             w = c(5000, 10000, 20000, 40000)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
