@@ -18,8 +18,12 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 #
 ################################################################################
 
+# Define some default legends
+l_legend <- "Proportion as lease area (L)"
+b_legend <- "Equilibrium\nbiomass\n(X / K)"
+
 # Different fines
-Ls <- seq(0.05, 1, by = 0.05)                           # Define a vector of L values
+Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
 
 L_X_and_fines <- expand_grid(L_try = Ls,
                         w_try = c(0, 5000, 10000, 15000)) %>% 

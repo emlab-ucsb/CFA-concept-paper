@@ -23,10 +23,10 @@ l_legend <- "Proportion as lease area (L)"
 b_legend <- "Equilibrium\nbiomass\n(X / K)"
 
 # Find best Chi for a given L (and default parameters)
-Ls <- seq(0.05, 1, by = 0.05)                           # Define a vector of L values
+Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
 opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- numeric(length(Ls))      # Define state variables
 
-# Beginf or loop to iterate across all L values
+# Begin for loop to iterate across all L values
 for(i in 1:length(Ls)){
   
   # Create a list to pass all the parameters
@@ -92,11 +92,11 @@ for(i in 1:length(Ls)){
 
 # Put the results together into a tibble
 best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e) %>% 
-  mutate(index = as.numeric(row.names(.)))                                     # I will use this column to join later
+  mutate(index = as.numeric(row.names(.)))                                      # I will use this column to join later
 
-# write.csv(x = best_results,
-#           file = here("results", "best_combination_of_L_and_Chi.csv"),
-#           row.names = F)
+write.csv(x = best_results,
+          file = here("results", "best_combination_of_L_and_Chi.csv"),
+          row.names = F)
 
 # Create a plot of L vs B
 optimal_fee_for_L_plot <- 
@@ -117,7 +117,7 @@ optimal_fee_for_L_plot
 
 # Different fines
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(5000, 10000, 20000, 40000)) %>% 
+                             w = c(0.5 * w, w, 10 * w, 20 * w, 50 * w)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
@@ -159,7 +159,7 @@ L_X_and_fines_plot <-
 L_X_and_fines_plot
 
 # Different enforcement costs
-L_X_and_enforcement_costs <- expand_grid(index = c(1:20), alpha = c(1000, 5000, 10000, 15000)) %>% 
+L_X_and_enforcement_costs <- expand_grid(index = c(1:20), alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try, chi = chi_try, alpha = alpha_try),
