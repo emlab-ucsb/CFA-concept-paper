@@ -48,6 +48,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     X_f_vec <-
     E_in_vec <-
     E_il_vec <-
+    E_i_vec <-
     E_l_vec <- 
     E_f_vec <- 
     E_e_vec <- 
@@ -65,6 +66,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
   
   #### Initial budget depends on access fee revenues only
   E_i <- 0
+  E_l <- 0
   theta <- 0
   
   #### BEGIN FOR LOOP ####
@@ -75,23 +77,34 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     X_f <- X_now_f
     X_tot <- X_r + X_f
     
-    # Selection of effort
+    # Enforcement effort
+    E_e <- (b + (E_l * chi) + (0 * theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
+    theta <- 1 - exp(-mu * E_e)  # Probability of detection given enforcement
+    
+    # Selection of legal effort outside and harvest
     E_f <- max(((p * q * X_f) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                             # Fishing effort in fishing zone
-    E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)                 # Legal fishing effort in lease zone
-    E_e <- (b + (E_l * chi) + (theta * w * E_i)) / alpha                                                      # Enforcement effort given budget
-    theta <- 1 - exp(-mu * E_e)                                                                           # Probability of detection given enforcement
+    H_f <- q * X_f * E_f   
+    
+    # Selection of lease zone legal effort and harvest
+    E_l <- max((((p * q * X_r * L) - chi) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)
+    H_l <- q * X_r * L * E_l  
+    
+    # Selection of illegal effort and harvest (single biomass blob)
+    # E_i <- max((((p * q * (X_r - H_l)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)
+    # H_i <- q * (X_r - H_l) * E_i
+    # H_in <- H_i * (1-L)                                                    # Illegal harvest in no-take
+    # H_il <- H_i * L
+    
+    # Selection of illefal effort and harvest (L and 1-L specific)
     E_in <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort in no-take
-    E_il <- max((((p * q * X_r * L * (1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)   # Illegal fishing effort in lease area
-    
+    E_il <- max((((p * q * X_r * L * (1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)        # Illegal fishing effort in lease area
     E_i <- E_in + E_il # Total illegal effort
-    
-    # Harvest
-    H_f <- q * X_f * E_f                                                                                 # Harvest in fishing zone
-    H_l <- q * X_r * L * E_l                                                                             # Legal harvest in lease zone
     H_in <- q * X_r * (1 - L) * E_in                                                                     # Illegal harvest in no-take
-    H_il <- q * X_r * L * (1 - (q * E_l)) * E_il                                                         # Illegal harvest in lease area
-    H_r <- H_l + H_in + H_il                                                                             # Total harvest in reserve
+    H_il <- q * X_r * L * (1 - (q * E_l)) * E_il            # Illegal harvest in lease
+    H_i <- H_il + H_in             # Total illegal harvest
     
+    
+    H_r <- H_l + H_i# H_in + H_il       # Total harvest in reserve
     
     # Growth in each area
     X_growth_f <- X_f + (X_f * r * (1 - (X_f / K_new)))  - H_f                                           # Gordon-Schafer
@@ -104,8 +117,9 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     X_vec[i] <- X_tot
     X_r_vec[i] <- X_r
     X_f_vec[i] <- X_f
-    E_in_vec[i] <- E_in
-    E_il_vec[i] <- E_il
+    # E_in_vec[i] <- E_in
+    # E_il_vec[i] <- E_il
+    E_i_vec[i] <- E_i
     E_l_vec[i] <- E_l 
     E_f_vec[i] <- E_f 
     E_e_vec[i] <- E_e 
@@ -120,7 +134,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
   }
   #### END FOR LOOP ####
   
-  
+
   # Check that equilibrium was reached
   if(!near(X_vec[i-1],
            X_vec[i],
@@ -147,8 +161,9 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
       X_vec,
       X_r_vec,
       X_f_vec,
-      E_in_vec,
-      E_il_vec,
+      # E_in_vec,
+      # E_il_vec,
+      E_i_vec,
       E_l_vec,
       E_f_vec,
       E_e_vec,

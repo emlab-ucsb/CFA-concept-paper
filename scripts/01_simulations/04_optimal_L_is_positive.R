@@ -23,10 +23,10 @@ l_legend <- "Proportion as lease area (L)"
 b_legend <- "Equilibrium\nbiomass\n(X / K)"
 
 # Find best Chi for a given L (and default parameters)
-Ls <- seq(0.05, 1, by = 0.05)                           # Define a vector of L values
-opt_par <- opt_val <- rel_b <- numeric(length(Ls))      # Define state variables
+Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
+opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- numeric(length(Ls))      # Define state variables
 
-# Beginf or loop to iterate across all L values
+# Begin for loop to iterate across all L values
 for(i in 1:length(Ls)){
   
   # Create a list to pass all the parameters
@@ -56,31 +56,43 @@ for(i in 1:length(Ls)){
   
   opt_par[i] <- opt_results$par                      # Save best chi
   opt_val[i] <- opt_results$value                    # Save corresponding biomass value
-  rel_b[i] <- wrapper(chi = opt_results$par,         # Call the simulation to calculate B_r / B_f
-                      r = r,
-                      K = K,
-                      X0 = X0,
-                      D = D,
-                      p = p,
-                      q = q,
-                      c = c,
-                      beta = beta,
-                      L = Ls[i],
-                      alpha = alpha,
-                      mu = mu,
-                      w = w,
-                      years = years,
-                      want = "All",
-                      b = b) %>% 
-    mutate(X_rel = X_r_vec / X_f_vec) %>% 
+  
+  run <- wrapper(chi = opt_results$par,         # Call the simulation to calculate B_r / B_f
+                 r = r,
+                 K = K,
+                 X0 = X0,
+                 D = D,
+                 p = p,
+                 q = q,
+                 c = c,
+                 beta = beta,
+                 L = Ls[i],
+                 alpha = alpha,
+                 mu = mu,
+                 w = w,
+                 years = years,
+                 want = "All",
+                 b = b) %>% 
+    mutate(X_rel = X_r_vec / X_f_vec)
+  
+  rel_b[i] <- run %>% 
     pull(X_rel)
+  
+  rel_e_i[i] <- run %>%
+    pull(E_i_vec)
+  
+  rel_e_l[i] <- run %>%
+    pull(E_l_vec)
+  
+  rel_e_e[i] <- run %>%
+    pull(E_e_vec)
   
 }
 
 
 # Put the results together into a tibble
-best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b) %>% 
-  mutate(index = as.numeric(row.names(.)))                                     # I will use this column to join later
+best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e) %>% 
+  mutate(index = as.numeric(row.names(.)))                                      # I will use this column to join later
 
 write.csv(x = best_results,
           file = here("results", "best_combination_of_L_and_Chi.csv"),
@@ -105,7 +117,7 @@ optimal_fee_for_L_plot
 
 # Different fines
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(0, 5000, 10000, 15000)) %>% 
+                             w = c(0.5 * w, w, 10 * w, 20 * w, 50 * w)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
@@ -147,7 +159,7 @@ L_X_and_fines_plot <-
 L_X_and_fines_plot
 
 # Different enforcement costs
-L_X_and_enforcement_costs <- expand_grid(index = c(1:20), alpha = c(1000, 5000, 10000, 15000)) %>% 
+L_X_and_enforcement_costs <- expand_grid(index = c(1:20), alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try, chi = chi_try, alpha = alpha_try),
