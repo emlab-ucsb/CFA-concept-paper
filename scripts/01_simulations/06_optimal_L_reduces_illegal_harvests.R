@@ -61,7 +61,7 @@ total_illegal_harvest_plot <-
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
-  labs(x = l_legend, y = "Equilibrium illegal\nharvest")
+  labs(x = l_legend, y = "Equilibrium illegal\nharvest (H / K)")
 
 lazy_ggsave(plot = total_illegal_harvest_plot,
             filename = "illegal_harvest_total_L_v_psi_plot",
@@ -80,12 +80,12 @@ illegal_harvest_subset_plots <-
   facet_wrap(~patch_new) +
   plot_theme() +
   scale_color_viridis_c() +
-  scale_x_continuous(limits = c(0.1, 1),
-                     breaks = seq(0.1, 1, by = 0.1)) +
+  scale_x_continuous(limits = c(0, 1),
+                     breaks = seq(0, 1, by = 0.2)) +
   guides(color = guide_colorbar(title = quote("Fine ("~psi~")"),
                                 frame.colour = "black",
                                 ticks.colour = "black")) +
-  labs(x = l_legend, y = "Equilibrium illegal\nharvest")
+  labs(x = l_legend, y = "Equilibrium illegal\nharvest (H/K)")
 
 lazy_ggsave(plot = illegal_harvest_subset_plots,
             filename = "illegal_harvest_patch_L_v_psi_plot",
@@ -95,7 +95,8 @@ lazy_ggsave(plot = illegal_harvest_subset_plots,
 # Combine
 fine_legend <- cowplot::get_legend(
   # create some space to the left of the legend
-  total_illegal_harvest_plot + theme(legend.box.margin = margin(0, 0, 0, 12))
+  total_illegal_harvest_plot +
+    theme(legend.box.margin = margin(0, 0, 10, 10))
 )
 
 
@@ -106,19 +107,18 @@ illegal_harvest_combined_plot <-
       total_illegal_harvest_plot + theme(legend.position="none"), 
       illegal_harvest_subset_plots + theme(legend.position = "none"),
       ncol = 1,
-      rel_heights = c(1.5,1),
-      labels = "AUTO",
-      label_size = 16
+      rel_heights = c(1.4,1),
+      labels = "AUTO"
     ),
     # legend
     fine_legend,
-    rel_widths = c(2,0.3)
+    rel_widths = c(2,0.5)
   )
 
 
 illegal_harvest_combined_plot
 
 lazy_ggsave(plot = illegal_harvest_combined_plot,
-            filename = "illegal_harvest_combined_plot",
+            filename = "figure_3_illegal_harvest_combined_plot",
             width = 10,
-            height = 8.5)
+            height = 10)
