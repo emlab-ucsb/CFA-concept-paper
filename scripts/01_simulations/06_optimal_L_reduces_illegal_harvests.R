@@ -73,8 +73,8 @@ illegal_harvest_subset_plots <-
   H_L_v_psi_chi %>% 
   select(-H_i) %>% 
   gather(patch, harvests, -c(L_try, w_try)) %>% 
-  mutate(patch_new = case_when(patch == "H_il_vec" ~ "Lease zone (illegal)",
-                               patch == "H_in_vec" ~ "No-take zone (illegal)")) %>%
+  mutate(patch_new = case_when(patch == "H_il_vec" ~ "Lease zone illegal harvest",
+                               patch == "H_in_vec" ~ "No-take zone illegal harvest")) %>%
   ggplot(aes(x = L_try, y = harvests, color = w_try, group = w_try)) +
   geom_line() +
   facet_wrap(~patch_new) +
@@ -120,5 +120,5 @@ illegal_harvest_combined_plot
 
 lazy_ggsave(plot = illegal_harvest_combined_plot,
             filename = "figure_3_illegal_harvest_combined_plot",
-            width = 10,
-            height = 10)
+            width = 18,
+            height = 22)
