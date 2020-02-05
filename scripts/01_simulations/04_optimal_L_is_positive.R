@@ -105,10 +105,10 @@ optimal_fee_for_L_plot <-
          mapping = aes(x = L, y = X / K, fill = chi, size = X_rel)) +
   geom_point(color = "black", shape = 21) +
   scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(title = bquote("Access fee("~chi~")"),
+  guides(fill = guide_colorbar(title = bquote("Access fee ("~chi~")"),
                                frame.colour = "black",
                                ticks.colour = "black"),
-         size = guide_legend(title = expression(B[r] / B[f]))) +
+         size = guide_legend(title = expression(X[M] / X[`F`]))) +
   plot_theme() +
   labs(x = l_legend,
        y = b_legend)
@@ -158,8 +158,8 @@ L_X_and_fines_plot <-
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = expression("Fine"))) +
-  theme(legend.position = c(0.6, 0),
+         color = guide_legend(title = bquote("Fine ("~psi~")"))) +
+  theme(legend.position = c(0.7, 0),
         legend.justification = c(0.5, 0)) +
   labs(x = "",
        y = b_legend_short)
@@ -167,7 +167,8 @@ L_X_and_fines_plot <-
 L_X_and_fines_plot
 
 # Different enforcement costs
-L_X_and_enforcement_costs <- expand_grid(index = c(1:20), alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
+L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
+                                         alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try, chi = chi_try, alpha = alpha_try),
@@ -200,8 +201,8 @@ L_X_and_enforcement_costs_plot <-
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(expression("Enforcement costs"))) +
-  theme(legend.position = c(0.6, 0),
+         color = guide_legend(bquote("Enforcement costs ("~alpha~")"))) +
+  theme(legend.position = c(0.7, 0),
         legend.justification = c(0.5, 0)) +
   labs(x = "",
        y = "")
@@ -209,7 +210,8 @@ L_X_and_enforcement_costs_plot <-
 L_X_and_enforcement_costs_plot
 
 # Different fishing costs
-L_X_and_fishing_costs <- expand_grid(index = c(1:20), c = c(2500, 3000, 3500, 4000)) %>% 
+L_X_and_fishing_costs <- expand_grid(index = c(1:20),
+                                     c = c(2500, 3000, 3500, 4000)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, c_try = c) %>% 
   mutate(results = pmap(.l = list(L = L_try, chi = chi_try, c = c_try),
@@ -242,9 +244,9 @@ L_X_and_fishing_costs_plot <-
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend("Fishing costs",
+         color = guide_legend(title = "Fishing costs (c)",
                               ncol = 2)) +
-  theme(legend.position = c(0.6, 0),
+  theme(legend.position = c(0.7, 0),
         legend.justification = c(0.5, 0)) +
   labs(x = l_legend,
        y = b_legend_short)
@@ -304,8 +306,8 @@ L_X_and_dispersal_plot <-
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = "Dispersal", ncol = 2)) +
-  theme(legend.position = c(0.5, 0),
+         color = guide_legend(title = "Self-recruitment", ncol = 2)) +
+  theme(legend.position = c(0.7, 0),
         legend.justification = c(0.5, 0)) +
   labs(x = l_legend,
        y = "")
