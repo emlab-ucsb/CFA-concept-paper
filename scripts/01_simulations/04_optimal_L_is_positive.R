@@ -20,7 +20,8 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 
 # Define some default legends
 l_legend <- "Proportion as lease area (L)"
-b_legend <- "Equilibrium\nbiomass\n(X / K)"
+b_legend <- "Equilibrium biomass (X / K)"
+b_legend_short <- "(X / K)"
 
 # Find best Chi for a given L (and default parameters)
 Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
@@ -114,10 +115,15 @@ optimal_fee_for_L_plot <-
 
 optimal_fee_for_L_plot
 
+#### UPDATE GEOM DEFAULTS FOR SUBPLOTS
+
+update_geom_defaults(geom = "point", new = list(size = 1.5,
+                                                color = "transparent",
+                                                shape = 21))
 
 # Different fines
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(0.5 * w, w, 10 * w, 20 * w, 50 * w)) %>% 
+                             w = c(0.5 * w, w, 10 * w, 20 * w)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
@@ -146,15 +152,17 @@ L_X_and_fines_plot <-
   ggplot(data = L_X_and_fines,
          mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = w_try, color = w_try)) +
-  geom_point(size = 3, color = "black", shape = 21) +
+  geom_point() +
   scale_fill_viridis_c() +
   scale_color_brewer(palette = "Set1") +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = expression("Fine("~psi~")"))) +
-  labs(x = l_legend,
-       y = b_legend)
+         color = guide_legend(title = expression("Fine"))) +
+  theme(legend.position = c(0.6, 0),
+        legend.justification = c(0.5, 0)) +
+  labs(x = "",
+       y = b_legend_short)
 
 L_X_and_fines_plot
 
@@ -186,15 +194,17 @@ L_X_and_enforcement_costs_plot <-
   ggplot(data = L_X_and_enforcement_costs,
        mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = alpha_try, color = alpha_try)) +
-  geom_point(size = 3, color = "black", shape = 21) +
+  geom_point() +
   scale_fill_viridis_c() +
   scale_color_brewer(palette = "Set1") +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(expression("Enforcement\ncosts ("~alpha~")"))) +
-  labs(x = l_legend,
-       y = b_legend)
+         color = guide_legend(expression("Enforcement costs"))) +
+  theme(legend.position = c(0.6, 0),
+        legend.justification = c(0.5, 0)) +
+  labs(x = "",
+       y = "")
 
 L_X_and_enforcement_costs_plot
 
@@ -226,15 +236,18 @@ L_X_and_fishing_costs_plot <-
   ggplot(data = L_X_and_fishing_costs,
          mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = c_try, color = c_try)) +
-  geom_point(size = 3, color = "black", shape = 21) +
+  geom_point() +
   scale_fill_viridis_c() +
   scale_color_brewer(palette = "Set1") +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend("Fishing\ncosts (c)")) +
+         color = guide_legend("Fishing costs",
+                              ncol = 2)) +
+  theme(legend.position = c(0.6, 0),
+        legend.justification = c(0.5, 0)) +
   labs(x = l_legend,
-       y = b_legend)
+       y = b_legend_short)
 
 L_X_and_fishing_costs_plot
 
@@ -285,15 +298,17 @@ L_X_and_dispersal_plot <-
   ggplot(data = L_X_and_dispersal,
        mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = self_rec, color = self_rec)) +
-  geom_point(size = 3, color = "black", shape = 21) +
+  geom_point() +
   scale_fill_viridis_c() +
   scale_color_brewer(palette = "Set1") +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = "Self-recruitment")) +
+         color = guide_legend(title = "Dispersal", ncol = 2)) +
+  theme(legend.position = c(0.5, 0),
+        legend.justification = c(0.5, 0)) +
   labs(x = l_legend,
-       y = b_legend)
+       y = "")
 
 L_X_and_dispersal_plot
 
@@ -309,12 +324,13 @@ figure2_subplots <- plot_grid(L_X_and_fines_plot,
 
 figure2 <- plot_grid(optimal_fee_for_L_plot,
                      figure2_subplots,
-                     ncol = 1)
+                     ncol = 1,
+                     labels = c("A", NA))
 
 
 lazy_ggsave(plot = figure2,
             filename = "figure_2",
-            width = 10, height = 10)
+            width = 18, height = 22)
 
 
 
