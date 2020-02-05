@@ -64,7 +64,7 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
         debug = FALSE),
       strip.text = element_text(
         hjust = 0,
-        size = rel(0.8), margin = margin(b = 10)),
+        margin = margin(b = 10)),
       plot.title = element_text(
         family = font_family,
         face = "plain",
