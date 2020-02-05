@@ -95,7 +95,7 @@ model <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, toler
     # H_in <- H_i * (1-L)                                                    # Illegal harvest in no-take
     # H_il <- H_i * L
     
-    # Selection of illefal effort and harvest (L and 1-L specific)
+    # Selection of illegal effort and harvest (L and 1-L specific)
     E_in <- max((((p * q * X_r * (1 - L)) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)  # Illegal fishing effort in no-take
     E_il <- max((((p * q * X_r * L * (1 - (q * E_l))) - (theta * w)) / (beta * c)) ^ (1 / (beta - 1)), 0, na.rm = T)        # Illegal fishing effort in lease area
     E_i <- E_in + E_il # Total illegal effort
