@@ -41,12 +41,12 @@ fishing_in_5k_increments <- effort_data %>%
   filter(year > 2015) %>% 
   filter(wdpaid %in% c(309888, 555629385, 400011,	220201, 11753)) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
-  mutate(name = case_when(wdpaid == 309888 ~ "PIPA",
-                          wdpaid == 555629385 ~ "Revillagigedo",
-                          wdpaid == 400011 ~ "PRINMS",
-                          wdpaid == 220201 ~ "PNMS",
-                          wdpaid == 11753 ~ "Galapagos"),
-         name = fct_relevel(name, c("PNMS", "Revillagigedo", "PIPA", "Galapagos", "PRINMS")),
+  mutate(name = case_when(wdpaid == 309888 ~ "B) PIPA",
+                          wdpaid == 555629385 ~ "D) Revillagigedo",
+                          wdpaid == 400011 ~ "C) PRINMS",
+                          wdpaid == 220201 ~ "A) PNMS",
+                          wdpaid == 11753 ~ "E) Galapagos"),
+         name = fct_relevel(name, c("A) PNMS", "D) Revillagigedo", "B) PIPA", "E) Galapagos", "C) PRINMS")),
          best_vessel_class = str_to_sentence(str_replace_all(best_vessel_class, "_", " "))) %>% 
   group_by(best_vessel_class, name, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T),
@@ -73,7 +73,7 @@ fishing_the_line_select_plot <-
   theme(legend.justification = c(0, 1),
         legend.position = c(0.5, 1/3.5)) +
   guides(fill = guide_legend(title = "Gear")) +
-  labs(x = "Distance from border (Km)",
+  labs(x = "Distance from border (km)",
        y = "Mean fishing effort (hours)")
 
 lazy_ggsave(plot = fishing_the_line_select_plot,
