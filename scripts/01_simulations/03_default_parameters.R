@@ -21,12 +21,12 @@ c <- 3000                 # *Cost coefficient (USD / unit of effort)
 beta <- 1.3               # *Cost exponent (From upsides?)
 
 ## Management
-L <- 0.7                  # Size of the lease zone
-alpha <- 5000             # Marginal cost of enforcement
+L <- 0.1                  # Size of the lease zone
+alpha <- 20000             # Marginal cost of enforcement
 mu <- 5e-4                # Enforcement coefficient
-w <- 12 * c               # Per-unit-effort fine
-chi <- 200                # Per-unit-access fee
-b <- 0                    # Exogenous enforcement budget
+w <- 365 * c               # Per-unit-effort fine
+chi <- 0.5 * c                # Per-unit-access fee
+b <- 0 * 1e6                   # Exogenous enforcement budget
 
 ## Duration of simulation
 years <- 50L              # *Duration of simulaionS

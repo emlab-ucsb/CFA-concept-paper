@@ -25,7 +25,7 @@ b_legend_short <- "(X / K)"
 
 # Find best Chi for a given L (and default parameters)
 Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
-opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- numeric(length(Ls))      # Define state variables
+opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- rel_h_l <- numeric(length(Ls))      # Define state variables
 
 # Begin for loop to iterate across all L values
 for(i in 1:length(Ls)){
@@ -47,7 +47,7 @@ for(i in 1:length(Ls)){
                b = b)
   
   # Call optim
-  opt_results <- optim(par = 1,                      # Guess that we know works (OA equilibrium)
+  opt_results <- optim(par = 0,                      # Guess that we know works (OA equilibrium)
                        fn = get_chi,                 # Function to call
                        pars = pars,                  # All other parametrs passed as a list, and extracted in wraper
                        control = list(fnscale = -1), # Indicate that we are maximizing
@@ -88,16 +88,21 @@ for(i in 1:length(Ls)){
   rel_e_e[i] <- run %>%
     pull(E_e_vec)
   
+  rel_h_l[i] <- run %>%
+    pull(H_l_vec)
+  
 }
 
 
 # Put the results together into a tibble
-best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e) %>% 
+best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e, H_l = rel_h_l) %>% 
   mutate(index = as.numeric(row.names(.)))                                      # I will use this column to join later
 
-write.csv(x = best_results,
-          file = here("results", "best_combination_of_L_and_Chi.csv"),
-          row.names = F)
+# write.csv(x = best_results,
+#           file = here("results", "best_combination_of_L_and_Chi.csv"),
+#           row.names = F)
+
+
 
 # Create a plot of L vs B
 optimal_fee_for_L_plot <- 
@@ -115,6 +120,53 @@ optimal_fee_for_L_plot <-
 
 optimal_fee_for_L_plot
 
+#####################################################################################
+Ls <- seq(0, 1, by = 0.05)
+
+for (L in Ls){
+  
+  run <- wrapper(chi = chi,         # Call the simulation to calculate B_r / B_f
+                 r = r,
+                 K = K,
+                 X0 = X0,
+                 D = D,
+                 p = p,
+                 q = q,
+                 c = c,
+                 beta = beta,
+                 L = L,
+                 alpha = alpha,
+                 mu = mu,
+                 w = w,
+                 years = years,
+                 want = "All",
+                 b = b) %>% 
+    mutate(X_rel = X_r_vec / X_f_vec,
+           L = L)
+  
+  if(L == Ls[1]){
+    save <- run
+  }
+  
+  save <- rbind(save, run)
+  
+}
+
+optimal_fee_for_L_plot <- 
+  ggplot(data = save,
+         mapping = aes(x = L, y = X_vec / K, fill = X_rel, size = X_rel)) +
+  geom_point(color = "black", shape = 21) +
+  scale_fill_viridis_c() +
+  guides(size = guide_legend(title = expression(X[M] / X[`F`])),
+         fill = guide_legend(title = expression(X[M] / X[`F`]))) +
+  plot_theme() +
+  labs(x = l_legend,
+       y = b_legend)
+
+
+#####################################################################################
+
+
 #### UPDATE GEOM DEFAULTS FOR SUBPLOTS
 
 update_geom_defaults(geom = "point", new = list(size = 1.5,
@@ -128,7 +180,7 @@ L_X_and_fines <- expand_grid(index = c(1:20),
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
   mutate(results = pmap(.l = list(L = L_try,
-                                  chi = chi_try,
+                                  chi = chi,
                                   w = w_try),
                         .f = wrapper,
                         r = r,
@@ -171,7 +223,7 @@ L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
                                          alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi_try, alpha = alpha_try),
+  mutate(results = pmap(.l = list(L = L_try, chi = chi, alpha = alpha_try),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -214,7 +266,7 @@ L_X_and_fishing_costs <- expand_grid(index = c(1:20),
                                      c = c(2500, 3000, 3500, 4000)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, c_try = c) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi_try, c = c_try),
+  mutate(results = pmap(.l = list(L = L_try, chi = chi, c = c_try),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -276,7 +328,7 @@ L_X_and_dispersal <-
   mutate(D = map(self_rec, make_D)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, D_try = D) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi_try, D = D_try),
+  mutate(results = pmap(.l = list(L = L_try, chi = chi, D = D_try),
                         .f = wrapper,
                         r = r,
                         K = K,
