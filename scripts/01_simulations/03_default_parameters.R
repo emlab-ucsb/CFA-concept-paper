@@ -16,17 +16,17 @@ D <- matrix(c(0.7, 0.3,
 
 ## Econ
 p <- 1100                 # *Price (USD / ton)
-q <- 2e-5                # *Catchability (made up)
+q <- 2e-5                 # *Catchability (approximated)
 c <- 3000                 # *Cost coefficient (USD / unit of effort)
-beta <- 1.3               # *Cost exponent (From upsides?)
+beta <- 1.3               # *Cost exponent (From upsides Costello et al., 2016)
 
 ## Management
 L <- 0.1                  # Size of the lease zone
-alpha <- 20000             # Marginal cost of enforcement
+alpha <- 20000            # Marginal cost of enforcement
 mu <- 5e-4                # Enforcement coefficient
-w <- 365 * c               # Per-unit-effort fine
-chi <- 0.5 * c                # Per-unit-access fee
-b <- 0 * 1e6                   # Exogenous enforcement budget
+w <- 365 * c              # Per-unit-effort fine
+chi <- 0.5 * c            # Per-unit-access fee, for when we don't optimize it
+b <- 0 * 1e6              # Exogenous enforcement budget
 
 ## Duration of simulation
 years <- 50L              # *Duration of simulaionS
