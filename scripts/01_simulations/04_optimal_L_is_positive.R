@@ -58,7 +58,7 @@ for(i in 1:length(Ls)){
   opt_par[i] <- opt_results$par                      # Save best chi
   opt_val[i] <- opt_results$value                    # Save corresponding biomass value
   
-  run <- wrapper(chi = opt_results$par,         # Call the simulation to calculate B_r / B_f
+  run <- wrapper(chi = opt_results$par,              # Call the simulation to calculate B_r / B_f
                  r = r,
                  K = K,
                  X0 = X0,
@@ -98,9 +98,9 @@ for(i in 1:length(Ls)){
 best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e, H_l = rel_h_l) %>% 
   mutate(index = as.numeric(row.names(.)))                                      # I will use this column to join later
 
-# write.csv(x = best_results,
-#           file = here("results", "best_combination_of_L_and_Chi.csv"),
-#           row.names = F)
+write.csv(x = best_results,
+          file = here("results", "best_combination_of_L_and_Chi.csv"),
+          row.names = F)
 
 
 
@@ -109,63 +109,21 @@ optimal_fee_for_L_plot <-
   ggplot(data = best_results,
          mapping = aes(x = L, y = X / K, fill = chi, size = X_rel)) +
   geom_point(color = "black", shape = 21) +
+  geom_vline(data = filter(best_results, X == max(X)),
+             aes(xintercept = L),
+             linetype = "dashed") +
   scale_fill_viridis_c() +
   guides(fill = guide_colorbar(title = bquote("Access fee ("~chi~")"),
                                frame.colour = "black",
                                ticks.colour = "black"),
          size = guide_legend(title = expression(X[M] / X[`F`]))) +
   plot_theme() +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0, 1)) +
   labs(x = l_legend,
        y = b_legend)
 
 optimal_fee_for_L_plot
-
-#####################################################################################
-Ls <- seq(0, 1, by = 0.05)
-
-for (L in Ls){
-  
-  run <- wrapper(chi = chi,         # Call the simulation to calculate B_r / B_f
-                 r = r,
-                 K = K,
-                 X0 = X0,
-                 D = D,
-                 p = p,
-                 q = q,
-                 c = c,
-                 beta = beta,
-                 L = L,
-                 alpha = alpha,
-                 mu = mu,
-                 w = w,
-                 years = years,
-                 want = "All",
-                 b = b) %>% 
-    mutate(X_rel = X_r_vec / X_f_vec,
-           L = L)
-  
-  if(L == Ls[1]){
-    save <- run
-  }
-  
-  save <- rbind(save, run)
-  
-}
-
-optimal_fee_for_L_plot <- 
-  ggplot(data = save,
-         mapping = aes(x = L, y = X_vec / K, fill = X_rel, size = X_rel)) +
-  geom_point(color = "black", shape = 21) +
-  scale_fill_viridis_c() +
-  guides(size = guide_legend(title = expression(X[M] / X[`F`])),
-         fill = guide_legend(title = expression(X[M] / X[`F`]))) +
-  plot_theme() +
-  labs(x = l_legend,
-       y = b_legend)
-
-
-#####################################################################################
-
 
 #### UPDATE GEOM DEFAULTS FOR SUBPLOTS
 
@@ -175,12 +133,11 @@ update_geom_defaults(geom = "point", new = list(size = 1.5,
 
 # Different fines
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(0.5 * w, w, 10 * w, 20 * w)) %>% 
+                             w = c(0.1 * w, 0.5 * w, w, 2 * w, 10 * w)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
-  # mutate(chi_try = 500) %>%                                     # Saving just in case we want to see a fixed-chi effect
   mutate(results = pmap(.l = list(L = L_try,
-                                  chi = chi,
+                                  chi = chi_try,
                                   w = w_try),
                         .f = wrapper,
                         r = r,
@@ -211,8 +168,8 @@ L_X_and_fines_plot <-
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(title = bquote("Fine ("~psi~")"))) +
-  theme(legend.position = c(0.7, 0),
-        legend.justification = c(0.5, 0)) +
+  theme(legend.position = c(0, 1),
+        legend.justification = c(0, 1)) +
   labs(x = "",
        y = b_legend_short)
 
@@ -220,10 +177,12 @@ L_X_and_fines_plot
 
 # Different enforcement costs
 L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
-                                         alpha = c(0.02 * alpha, 0.05 * alpha, alpha, alpha * 2)) %>% 
+                                         alpha = c(0.1 * alpha, 0.5 * alpha, alpha, 2 * alpha, 10 * alpha)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi, alpha = alpha_try),
+  mutate(results = pmap(.l = list(L = L_try,
+                                  chi = chi_try,
+                                  alpha = alpha_try),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -254,8 +213,8 @@ L_X_and_enforcement_costs_plot <-
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(bquote("Enforcement costs ("~alpha~")"))) +
-  theme(legend.position = c(0.7, 0),
-        legend.justification = c(0.5, 0)) +
+  theme(legend.position = c(0, 1),
+        legend.justification = c(0, 1)) +
   labs(x = "",
        y = "")
 
@@ -263,10 +222,12 @@ L_X_and_enforcement_costs_plot
 
 # Different fishing costs
 L_X_and_fishing_costs <- expand_grid(index = c(1:20),
-                                     c = c(2500, 3000, 3500, 4000)) %>% 
+                                     c = c(0.8 * c, 0.9 * c, c, 1.1 * c, 1.2 * c)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, c_try = c) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi, c = c_try),
+  mutate(results = pmap(.l = list(L = L_try,
+                                  chi = chi_try,
+                                  c = c_try),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -298,7 +259,7 @@ L_X_and_fishing_costs_plot <-
          size = FALSE,
          color = guide_legend(title = "Fishing costs (c)",
                               ncol = 2)) +
-  theme(legend.position = c(0.7, 0),
+  theme(legend.position = c(0.5, 0),
         legend.justification = c(0.5, 0)) +
   labs(x = l_legend,
        y = b_legend_short)
@@ -328,7 +289,9 @@ L_X_and_dispersal <-
   mutate(D = map(self_rec, make_D)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, D_try = D) %>% 
-  mutate(results = pmap(.l = list(L = L_try, chi = chi, D = D_try),
+  mutate(results = pmap(.l = list(L = L_try,
+                                  chi = chi_try,
+                                  D = D_try),
                         .f = wrapper,
                         r = r,
                         K = K,
@@ -358,9 +321,9 @@ L_X_and_dispersal_plot <-
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = "Self-recruitment", ncol = 2)) +
-  theme(legend.position = c(0.7, 0),
-        legend.justification = c(0.5, 0)) +
+         color = guide_legend(title = "Self-recruitment")) +
+  theme(legend.position = c(0, 1),
+        legend.justification = c(0, 1)) +
   labs(x = l_legend,
        y = "")
 
