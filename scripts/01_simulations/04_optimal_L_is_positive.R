@@ -95,7 +95,14 @@ for(i in 1:length(Ls)){
 
 
 # Put the results together into a tibble
-best_results <- tibble(L = Ls, chi = opt_par, X = opt_val, X_rel = rel_b, E_i = rel_e_i, E_l = rel_e_l, E_e = rel_e_e, H_l = rel_h_l) %>% 
+best_results <- tibble(L = Ls,
+                       chi = opt_par,
+                       X = opt_val,
+                       X_rel = rel_b,
+                       E_i = rel_e_i,
+                       E_l = rel_e_l,
+                       E_e = rel_e_e,
+                       H_l = rel_h_l) %>% 
   mutate(index = as.numeric(row.names(.)))                                      # I will use this column to join later
 
 write.csv(x = best_results,

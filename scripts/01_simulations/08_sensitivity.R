@@ -66,7 +66,8 @@ make_D <- function(self_rec){
 
 plan(multiprocess)
 
-a <- expand_grid(L_try = seq(0, 1, by = 0.2),
+a <- expand_grid(K_try = c(0.9 * K, K, 1.5 * K),
+                 L_try = seq(0, 1, by = 0.2),
                  w_try = c(0.1 * w, 0.5 * w, w, 10 * w),
                  alpha_try = c(0.5 * alpha, alpha, alpha * 2),
                  c_try = c(2500, 3000, 3500),
@@ -78,10 +79,10 @@ a <- expand_grid(L_try = seq(0, 1, by = 0.2),
                                          w = w_try,
                                          alpha = alpha_try,
                                          c = c_try,
-                                         D = D_try),
+                                         D = D_try,
+                                         K = K_try),
                                .f = optimize,
                                r = r,
-                               K = K,
                                X0 = X0,
                                p = p,
                                q = q,
