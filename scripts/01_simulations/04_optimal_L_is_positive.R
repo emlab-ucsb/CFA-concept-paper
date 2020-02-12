@@ -311,7 +311,7 @@ L_X_and_fishing_costs_plot
 
 
 ### --------------------------------------------------------------------
-# Plot 5: L vs B for five different dispersal scenarios (chi is optimized)
+# Plot 5: L vs B for four different dispersal scenarios (chi is optimized)
 ### --------------------------------------------------------------------
 
 # Different dispersal scenarios
