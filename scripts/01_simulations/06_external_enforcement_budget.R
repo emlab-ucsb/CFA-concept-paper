@@ -14,7 +14,7 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 
 # Plot legends
 l_legend <- "Proportion as lease area (L)"
-b_legend <- "External budget (b)"
+b_legend <- "External enforcement budget (b)"
 
 # Define parameters
 Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
@@ -45,7 +45,10 @@ bs_ridgeline <- c(10,
                   1e4 * alpha,
                   1e5 * alpha)
 
-# Start simulations
+### --------------------------------------------------------------------
+# Plot 1: Optimal L vs b ridgeline plot (chi is fixed)
+### --------------------------------------------------------------------
+
 ridgeline_data <- expand_grid(b_try = bs_ridgeline,
                               L_try = Ls) %>% 
   mutate(results = pmap(.l = list(b = b_try,
@@ -55,6 +58,7 @@ ridgeline_data <- expand_grid(b_try = bs_ridgeline,
                         K = K,
                         r = r,
                         X0 = X0,
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -78,6 +82,12 @@ L_and_b_ridgeline <- ggplot(data = ridgeline_data, aes(x = L_try,y = b_try)) +
        y = b_legend) +
   scale_y_continuous(trans = "log10")
 
+L_and_b_ridgeline
+
+### --------------------------------------------------------------------
+# Get simulation data for heatmaps
+### --------------------------------------------------------------------
+
 heatmap_data <- expand_grid(b_try = bs_heatmap,
             L_try = Ls) %>% 
   mutate(results = pmap(.l = list(b = b_try,
@@ -87,6 +97,7 @@ heatmap_data <- expand_grid(b_try = bs_heatmap,
                         K = K,
                         r = r,
                         X0 = X0,
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -101,47 +112,74 @@ heatmap_data <- expand_grid(b_try = bs_heatmap,
   mutate(budget = E_e_vec * alpha,
          budget_from_fees = budget - b_try,
          budget_prop = budget_from_fees / budget,
-         prop_illegal_harvests = H_i_vec / (H_i_vec + H_l_vec)) %>% 
-  replace_na(replace = list(prop_illegal_harvests = 0))
+         prop_illegal_harvests = H_i_vec / (H_i_vec + H_l_vec),
+         prop_legal_harvests = H_l_vec / (H_i_vec + H_l_vec)) %>% 
+  replace_na(replace = list(prop_illegal_harvests = 0)) 
 
-# Heatmaps
+### --------------------------------------------------------------------
+# Plot 2: L vs b heatmap - biomass (chi is fixed)
+### --------------------------------------------------------------------
 
 biomass_heatmap <- 
   ggplot(data = heatmap_data, aes(x = L_try, y = b_try)) + 
   geom_tile(aes(fill = X_vec / K)) +
   geom_point(data = ridgeline_data) +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(name = "X/K") +
   plot_theme() +
   labs(x = l_legend,
        y = b_legend) +
-  scale_y_continuous(trans = "log10", expand = c(0, 0)) +
+  scale_y_continuous(trans = "log10", expand = c(0, 0), labels = dollar) +
   scale_x_continuous(expand = c(0, 0))
+
+biomass_heatmap
+
+### --------------------------------------------------------------------
+# Plot 2: L vs b heatmap - total budget (chi is fixed)
+### --------------------------------------------------------------------
 
 budget_heatmap <- 
   ggplot(data = heatmap_data,aes(x = L_try, y = b_try, fill = budget_prop)) + 
   geom_tile() +
-  scale_fill_viridis_c(name = "Percent budget\nfrom access fees",
-                       labels = scales::percent) +
+  scale_fill_viridis_c(name = "% total budget\nfrom access fees",
+                       labels = scales::percent,
+                       limits = c(0,1),
+                       option = "A") +
   plot_theme() +
   labs(x = l_legend,
        y = b_legend) +
-  scale_y_continuous(trans = "log10", expand = c(0, 0)) +
+  scale_y_continuous(trans = "log10", expand = c(0, 0), labels = dollar) +
   scale_x_continuous(expand = c(0, 0))
+
+budget_heatmap
+
+### --------------------------------------------------------------------
+# Plot 3: L vs b heatmap - illegal effort (chi is fixed)
+### --------------------------------------------------------------------
 
 effort_heatmap <- 
-  ggplot(data = heatmap_data, aes(x = L_try, y = b_try, fill = prop_illegal_harvests)) + 
+  ggplot(data = heatmap_data, aes(x = L_try, y = b_try, fill = H_i_vec/K)) + 
   geom_tile() +
-  scale_fill_viridis_c(name = "Percent harvests\nillegal",
-                       labels = scales::percent)  +
+  scale_fill_viridis_c(name = "Illegal fishing/K",
+                       option = "D")  +
   plot_theme() +
   labs(x = l_legend,
        y = b_legend) +
-  scale_y_continuous(trans = "log10", expand = c(0, 0)) +
+  scale_y_continuous(trans = "log10", expand = c(0, 0), labels = dollar) +
   scale_x_continuous(expand = c(0, 0))
 
-plot_grid(biomass_heatmap,
-          budget_heatmap,
-          effort_heatmap, ncol = 1) 
+### --------------------------------------------------------------------
+# Combine plots
+### --------------------------------------------------------------------
+
+figure_3_fixed <- plot_grid(biomass_heatmap,
+                            budget_heatmap,
+                            effort_heatmap, ncol = 1,
+                            align = "hv")
+
+lazy_ggsave(plot = figure_3_fixed,
+            filename = "figure_3_fixed_chi",
+            width = 18, height = 22)
+
 
 ################################ OPTIMIZED VERSIONS ################################
 
