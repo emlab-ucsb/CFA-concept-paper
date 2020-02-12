@@ -194,6 +194,9 @@ optimize <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, b = 0){
   return(results)
 }
 
+
+plan(multiprocess)
+
 # Run ridgeline
 ridgeline_data_optimizing <- expand_grid(b_try = bs_heatmap,
                                          L_try = Ls) %>% 
@@ -224,8 +227,6 @@ ggplot(data = ridgeline_data_optimizing, aes(x = L_try,y = b_try)) +
   labs(x = "Proportion as lease area (L)",
        y = "External budget (b)") +
   scale_y_continuous(trans = "log10")
-
-plan(multiprocess)
 
 # Run heatmap data
 heatmap_data_optimizing <- expand_grid(b_try = bs_heatmap,
