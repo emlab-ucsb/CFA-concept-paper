@@ -8,13 +8,14 @@
 # 
 ################################################################
 
-wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, want = "X_vec", b = 0){
+wrapper <- function(chi, r, K, X0, s, D, p, q, c, beta, L, alpha, mu, w, years, want = "X_vec", b = 0){
   
   if(!want == "All"){
     value <- model(chi = chi,
                    r = r,
                    K = K,
                    X0 = X0,
+                   s = s,
                    D = D,
                    p = p,
                    q = q,
@@ -34,6 +35,7 @@ wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, wan
                    r = r,
                    K = K,
                    X0 = X0,
+                   s = s,
                    D = D,
                    p = p,
                    q = q,
@@ -52,13 +54,22 @@ wrapper <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, wan
   return(value)                                                            # Return the value
 }
 
-# Optimization wraper 2.0
+################################################################
+#                       CHI WRAPPER                            #
+################################################################
+### Description
+# This function allows the model to be run over many values of chi 
+# while using the default parameters for everything else.
+# 
+################################################################
+
 get_chi <- function(chi, pars){
   
   # Extract non-optimization parameters
   r <- pars$r
   K <- pars$K
   X0 <- pars$X0
+  s <- pars$s
   D <- pars$D
   p <- pars$p
   q <- pars$q
@@ -76,6 +87,7 @@ get_chi <- function(chi, pars){
                      r = r,
                      K = K,
                      X0 = X0,
+                     s = s,
                      D = D,
                      p = p,
                      q = q,
@@ -99,7 +111,7 @@ get_chi <- function(chi, pars){
 # maximizes total system biomass for a given set of parameters
 ################################################################
 
-biomass_optim_wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, chi_min = 0, chi_max = 100000, want = "X_vec"){
+biomass_optim_wrapper <- function(r, K, X0, s, D, p, q, c, beta, L, alpha, mu, w, years, chi_min = 0, chi_max = 100000, want = "X_vec"){
   
   # Sequence of chi values to hunt over
   chi_seq <- seq(chi_min, chi_max, length.out = 50)
@@ -111,6 +123,7 @@ biomass_optim_wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, y
                               r = r,
                               K = K,
                               X0 = X0,
+                              s = s,
                               D = D,
                               p = p,
                               q = q,
@@ -126,7 +139,7 @@ biomass_optim_wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, y
   # If there is no difference in biomass
   if(min(rough_value$equil_b) == max(rough_value$equil_b)){
     
-    out <- wrapper(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi = 0, years, want)
+    out <- wrapper(r, K, X0, s, D, p, q, c, beta, L, alpha, mu, w, chi = 0, years, want)
    
   # Otherwise extract chi cooresponding to max value of biomass 
   }else{
@@ -135,10 +148,10 @@ biomass_optim_wrapper <- function(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, y
     chi_min <- chi_seq[which(chi_seq == chi_start) - 1]
     chi_max <- chi_seq[which(chi_seq == chi_start) + 1]
     
-    best_value <- nlminb(start = 30000, model, r = r, K = K, X0 = X0, D = D, p = p, q = q, c = c, beta = beta, L = L, alpha = alpha, mu = mu, w = w, years = years, purpose = "optim", control = list(step.min = 10, step.max = 100))
+    best_value <- nlminb(start = 30000, model, r = r, K = K, X0 = X0, s = s, D = D, p = p, q = q, c = c, beta = beta, L = L, alpha = alpha, mu = mu, w = w, years = years, purpose = "optim", control = list(step.min = 10, step.max = 100))
     
     # out
-    out <- wrapper(r, K, X0, D, p, q, c, beta, L, alpha, mu, w, chi = best_value$par, years, want)
+    out <- wrapper(r, K, X0, s, D, p, q, c, beta, L, alpha, mu, w, chi = best_value$par, years, want)
     
   }
   

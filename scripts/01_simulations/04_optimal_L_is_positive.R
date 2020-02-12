@@ -34,6 +34,7 @@ for(i in 1:length(Ls)){
   pars <- list(r = r,
                K = K,
                X0 = X0,
+               s = s,
                D = D,
                p = p,
                q = q,
@@ -62,6 +63,7 @@ for(i in 1:length(Ls)){
                  r = r,
                  K = K,
                  X0 = X0,
+                 s = s,
                  D = D,
                  p = p,
                  q = q,
@@ -110,8 +112,10 @@ write.csv(x = best_results,
           row.names = F)
 
 
+### ------------------------------------------------------
+# Plot 1: L vs B for default parameters (chi is optimized)
+### ------------------------------------------------------
 
-# Create a plot of L vs B
 optimal_fee_for_L_plot <- 
   ggplot(data = best_results,
          mapping = aes(x = L, y = X / K, fill = chi, size = X_rel)) +
@@ -126,21 +130,31 @@ optimal_fee_for_L_plot <-
          size = guide_legend(title = expression(X[M] / X[`F`]))) +
   plot_theme() +
   theme(legend.justification = c(0, 1),
-        legend.position = c(0, 1)) +
+        legend.position = c(0.01, 1)) +
   labs(x = l_legend,
        y = b_legend)
 
 optimal_fee_for_L_plot
 
-#### UPDATE GEOM DEFAULTS FOR SUBPLOTS
+
+### UPDATE GEOM DEFAULTS FOR SUBPLOTS
 
 update_geom_defaults(geom = "point", new = list(size = 1.5,
                                                 color = "transparent",
                                                 shape = 21))
 
-# Different fines
+### --------------------------------------------------------
+# Plot 2: L vs B for five different fines (chi is optimized)
+### --------------------------------------------------------
+
+w_range <- c(0.1 * w,
+             0.5 * w, 
+             w,
+             2 * w,
+             10 * w)
+
 L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = c(0.1 * w, 0.5 * w, w, 2 * w, 10 * w)) %>% 
+                             w = w_range) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -150,6 +164,7 @@ L_X_and_fines <- expand_grid(index = c(1:20),
                         r = r,
                         K = K,
                         X0 = X0,
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -175,16 +190,26 @@ L_X_and_fines_plot <-
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(title = bquote("Fine ("~psi~")"))) +
-  theme(legend.position = c(0, 1),
+  theme(legend.position = c(0.7, 0.92),
         legend.justification = c(0, 1)) +
   labs(x = "",
        y = b_legend_short)
 
 L_X_and_fines_plot
 
+### --------------------------------------------------------------------
+# Plot 3: L vs B for five different enforcement costs (chi is optimized)
+### --------------------------------------------------------------------
+
+alpha_range <- c(0.1 * alpha,
+                 0.5 * alpha,
+                 alpha,
+                 2 * alpha,
+                 10 * alpha)
+
 # Different enforcement costs
 L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
-                                         alpha = c(0.1 * alpha, 0.5 * alpha, alpha, 2 * alpha, 10 * alpha)) %>% 
+                                         alpha = alpha_range) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -194,6 +219,7 @@ L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
                         r = r,
                         K = K,
                         X0 = X0,
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -220,16 +246,25 @@ L_X_and_enforcement_costs_plot <-
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(bquote("Enforcement costs ("~alpha~")"))) +
-  theme(legend.position = c(0, 1),
+  theme(legend.position = c(0.5, 0.92),
         legend.justification = c(0, 1)) +
   labs(x = "",
        y = "")
 
 L_X_and_enforcement_costs_plot
 
-# Different fishing costs
+### --------------------------------------------------------------------
+# Plot 4: L vs B for five different fishing costs (chi is optimized)
+### --------------------------------------------------------------------
+
+c_range <- c(0.8 * c,
+             0.9 * c,
+             c,
+             1.1 * c,
+             1.2* c)
+
 L_X_and_fishing_costs <- expand_grid(index = c(1:20),
-                                     c = c(0.8 * c, 0.9 * c, c, 1.1 * c, 1.2 * c)) %>% 
+                                     c = c_range) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, c_try = c) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -239,6 +274,7 @@ L_X_and_fishing_costs <- expand_grid(index = c(1:20),
                         r = r,
                         K = K,
                         X0 = X0,
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -266,15 +302,17 @@ L_X_and_fishing_costs_plot <-
          size = FALSE,
          color = guide_legend(title = "Fishing costs (c)",
                               ncol = 2)) +
-  theme(legend.position = c(0.5, 0),
-        legend.justification = c(0.5, 0)) +
+  theme(legend.position = c(0.62, 0.75),
+        legend.justification = c(0, 1)) +
   labs(x = l_legend,
        y = b_legend_short)
 
 L_X_and_fishing_costs_plot
 
 
-
+### --------------------------------------------------------------------
+# Plot 5: L vs B for five different dispersal scenarios (chi is optimized)
+### --------------------------------------------------------------------
 
 # Different dispersal scenarios
 make_D <- function(self_rec){
@@ -289,10 +327,10 @@ make_D <- function(self_rec){
   return(D)
 }
 
-
+self_rec_range <- c(0.3, 0.5, 0.7, 0.9)
 
 L_X_and_dispersal <- 
-  expand_grid(index = c(1:20), self_rec = c(0.3, 0.5, 0.7, 0.9)) %>% 
+  expand_grid(index = c(1:20), self_rec = self_rec_range) %>% 
   mutate(D = map(self_rec, make_D)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, D_try = D) %>% 
@@ -303,6 +341,7 @@ L_X_and_dispersal <-
                         r = r,
                         K = K,
                         X0 = X0,
+                        s = s,
                         p = p,
                         q = q,
                         c = c,
@@ -329,13 +368,17 @@ L_X_and_dispersal_plot <-
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(title = "Self-recruitment")) +
-  theme(legend.position = c(0, 1),
+  theme(legend.position = c(0.6, 0.75),
         legend.justification = c(0, 1)) +
   labs(x = l_legend,
        y = "")
 
 L_X_and_dispersal_plot
 
+
+### --------------
+# Combined figure
+### --------------
 
 
 figure2_subplots <- plot_grid(L_X_and_fines_plot,

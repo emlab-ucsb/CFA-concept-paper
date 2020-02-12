@@ -38,7 +38,6 @@ fast_check <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, 
 
 #### FIGURE STUFF ####
 # Plot theme function
-
 plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
   
   half_line <- font_size / 2
@@ -100,8 +99,6 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
       complete = TRUE
     )
 }
-
-
 
 
 # Save function

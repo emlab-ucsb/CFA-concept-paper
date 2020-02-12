@@ -9,6 +9,7 @@
 r <- 0.57                 # *Growth rate
 K <- 6.876526e6           # *Carrying capacity (tons)
 X0 <- 0.8 * K             # *Initial biomass (tons)
+s <- 0.5                  # Initial distribution of biomass to the reserve
 D <- matrix(c(0.7, 0.3,
               0.3, 0.7),
             nrow = 2,
@@ -22,11 +23,11 @@ beta <- 1.3               # *Cost exponent (From upsides Costello et al., 2016)
 
 ## Management
 L <- 0.1                  # Size of the lease zone
-alpha <- 20000            # Marginal cost of enforcement
+alpha <- 5000             # Marginal cost of enforcement
 mu <- 5e-4                # Enforcement coefficient
 w <- 365 * c              # Per-unit-effort fine
 chi <- 0.5 * c            # Per-unit-access fee, for when we don't optimize it
-b <- 0 * 1e6              # Exogenous enforcement budget
+b <- 0                    # Exogenous enforcement budget
 
 ## Duration of simulation
 years <- 50L              # *Duration of simulaionS
