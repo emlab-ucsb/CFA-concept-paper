@@ -31,3 +31,24 @@ b <- 0                    # Exogenous enforcement budget
 
 ## Duration of simulation
 years <- 50L              # *Duration of simulaionS
+
+
+###########################################################################
+
+## Parameter ranges (absolute values)
+# Ls
+L_range <- seq(0, 1, by = 0.01)
+self_rec_range <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+## Parameter Ranges (multipliers of the default value
+w_range_multipliers <- c(0.1, 0.5, 1, 2, 10)
+alpha_range_multipliers <- c(0.1, 0.5, 1, 2, 10)
+c_range_multipliers <- c(0.8, 0.9, 1, 1.1, 1.2)
+chi_range_multipliers <- c(0.1, 0.5, 1, 2, 10)
+
+##############################################################################
+
+# Define some default legends
+L_legend <- "Proportion as lease area (L)"
+X_legend <- "Equilibrium biomass (X / K)"
+X_legend_short <- "X / K"

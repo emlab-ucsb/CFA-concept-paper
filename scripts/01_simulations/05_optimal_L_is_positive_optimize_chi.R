@@ -18,17 +18,12 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 #
 ################################################################################
 
-# Define some default legends
-l_legend <- "Proportion as lease area (L)"
-b_legend <- "Equilibrium biomass (X / K)"
-b_legend_short <- "(X / K)"
-
 # Find best Chi for a given L (and default parameters)
-Ls <- seq(0, 1, by = 0.05)                           # Define a vector of L values
-opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- rel_h_l <- numeric(length(Ls))      # Define state variables
+opt_par <- opt_val <- rel_b <- rel_e_i <- rel_e_l <- rel_e_e <- rel_h_l <- numeric(length(L_range))      # Define state variables
 
-# Begin for loop to iterate across all L values
-for(i in 1:length(Ls)){
+# For loop iterating across all values of L - then optimize chi for each L
+
+for(i in 1:length(L_range)){
   
   # Create a list to pass all the parameters
   pars <- list(r = r,
@@ -40,7 +35,7 @@ for(i in 1:length(Ls)){
                q = q,
                c = c,
                beta = beta,
-               L = Ls[i],                               # The ith value of L gets passed to the list
+               L = L_range[i],                               # The ith value of L gets passed to the list
                alpha = alpha,
                mu = mu,
                w = w,
@@ -69,7 +64,7 @@ for(i in 1:length(Ls)){
                  q = q,
                  c = c,
                  beta = beta,
-                 L = Ls[i],
+                 L = L_range[i],
                  alpha = alpha,
                  mu = mu,
                  w = w,
@@ -97,7 +92,7 @@ for(i in 1:length(Ls)){
 
 
 # Put the results together into a tibble
-best_results <- tibble(L = Ls,
+best_results <- tibble(L = L_range,
                        chi = opt_par,
                        X = opt_val,
                        X_rel = rel_b,
@@ -119,7 +114,7 @@ write.csv(x = best_results,
 optimal_fee_for_L_plot <- 
   ggplot(data = best_results,
          mapping = aes(x = L, y = X / K, fill = chi, size = X_rel)) +
-  geom_point(color = "black", shape = 21) +
+  geom_point(color = "black", shape = 21, alpha = 0.8) +
   geom_vline(data = filter(best_results, X == max(X)),
              aes(xintercept = L),
              linetype = "dashed") +
@@ -131,30 +126,22 @@ optimal_fee_for_L_plot <-
   plot_theme() +
   theme(legend.justification = c(0, 1),
         legend.position = c(0.01, 1)) +
-  labs(x = l_legend,
-       y = b_legend)
+  labs(x = L_legend,
+       y = X_legend)
 
 optimal_fee_for_L_plot
 
 
 ### UPDATE GEOM DEFAULTS FOR SUBPLOTS
 
-update_geom_defaults(geom = "point", new = list(size = 1.5,
-                                                color = "transparent",
-                                                shape = 21))
+update_geom_defaults(geom = "point", new = list(size = 1))
 
 ### --------------------------------------------------------
 # Plot 2: L vs B for five different fines (chi is optimized)
 ### --------------------------------------------------------
 
-w_range <- c(0.1 * w,
-             0.5 * w, 
-             w,
-             2 * w,
-             10 * w)
-
-L_X_and_fines <- expand_grid(index = c(1:20),
-                             w = w_range) %>% 
+L_X_and_fines <- expand_grid(index = c(1:length(L_range)),
+                             w = w_range_multipliers*w) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, w_try = w) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -183,17 +170,19 @@ L_X_and_fines_plot <-
   ggplot(data = L_X_and_fines,
          mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = w_try, color = w_try)) +
-  geom_point() +
+  geom_point(aes(color = w_try)) +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1", 
+                     labels = paste0(as.character(w_range_multipliers), "x")) +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = bquote("Fine ("~psi~")"))) +
-  theme(legend.position = c(0.7, 0.92),
-        legend.justification = c(0, 1)) +
+         color = guide_legend(title = bquote("Fine ("~psi~")"),
+                              title.position = "top",
+                              title.hjust = 0.5)) +
+  theme(legend.position = "top") +
   labs(x = "",
-       y = b_legend_short)
+       y = X_legend_short)
 
 L_X_and_fines_plot
 
@@ -201,15 +190,9 @@ L_X_and_fines_plot
 # Plot 3: L vs B for five different enforcement costs (chi is optimized)
 ### --------------------------------------------------------------------
 
-alpha_range <- c(0.1 * alpha,
-                 0.5 * alpha,
-                 alpha,
-                 2 * alpha,
-                 10 * alpha)
-
 # Different enforcement costs
-L_X_and_enforcement_costs <- expand_grid(index = c(1:20),
-                                         alpha = alpha_range) %>% 
+L_X_and_enforcement_costs <- expand_grid(index = c(1:length(L_range)),
+                                         alpha = alpha_range_multipliers*alpha) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, alpha_try = alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -239,15 +222,17 @@ L_X_and_enforcement_costs_plot <-
   ggplot(data = L_X_and_enforcement_costs,
        mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = alpha_try, color = alpha_try)) +
-  geom_point() +
+  geom_point(aes(color = alpha_try)) +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1",
+                     labels = paste0(as.character(alpha_range_multipliers), "x")) +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(bquote("Enforcement costs ("~alpha~")"))) +
-  theme(legend.position = c(0.5, 0.92),
-        legend.justification = c(0, 1)) +
+         color = guide_legend(bquote("Enforcement costs ("~alpha~")"),
+                              title.position = "top",
+                              title.hjust = 0.5)) +
+  theme(legend.position = "top") +
   labs(x = "",
        y = "")
 
@@ -257,14 +242,8 @@ L_X_and_enforcement_costs_plot
 # Plot 4: L vs B for five different fishing costs (chi is optimized)
 ### --------------------------------------------------------------------
 
-c_range <- c(0.8 * c,
-             0.9 * c,
-             c,
-             1.1 * c,
-             1.2* c)
-
-L_X_and_fishing_costs <- expand_grid(index = c(1:20),
-                                     c = c_range) %>% 
+L_X_and_fishing_costs <- expand_grid(index = c(1:length(L_range)),
+                                     c = c_range_multipliers*c) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, c_try = c) %>% 
   mutate(results = pmap(.l = list(L = L_try,
@@ -294,18 +273,19 @@ L_X_and_fishing_costs_plot <-
   ggplot(data = L_X_and_fishing_costs,
          mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = c_try, color = c_try)) +
-  geom_point() +
+  geom_point(aes(color = c_try)) +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1",
+                     labels = paste0(as.character(c_range_multipliers), "x")) +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
          color = guide_legend(title = "Fishing costs (c)",
-                              ncol = 2)) +
-  theme(legend.position = c(0.62, 0.75),
-        legend.justification = c(0, 1)) +
-  labs(x = l_legend,
-       y = b_legend_short)
+                              title.position = "top",
+                              title.hjust = 0.5)) +
+  theme(legend.position = "top") +
+  labs(x = L_legend,
+       y = X_legend_short)
 
 L_X_and_fishing_costs_plot
 
@@ -327,10 +307,9 @@ make_D <- function(self_rec){
   return(D)
 }
 
-self_rec_range <- c(0.3, 0.5, 0.7, 0.9)
-
 L_X_and_dispersal <- 
-  expand_grid(index = c(1:20), self_rec = self_rec_range) %>% 
+  expand_grid(index = c(1:length(L_range)), 
+              self_rec = self_rec_range) %>% 
   mutate(D = map(self_rec, make_D)) %>% 
   left_join(best_results, by = c("index")) %>% 
   rename(L_try = L, chi_try = chi, D_try = D) %>% 
@@ -361,16 +340,18 @@ L_X_and_dispersal_plot <-
   ggplot(data = L_X_and_dispersal,
        mapping = aes(x = L_try, y = X_vec / K, fill = chi_try)) +
   geom_line(aes(group = self_rec, color = self_rec)) +
-  geom_point() +
+  geom_point(aes(color = self_rec)) +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1",
+                     labels = paste0(as.character(self_rec_range))) +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
-         color = guide_legend(title = "Self-recruitment")) +
-  theme(legend.position = c(0.6, 0.75),
-        legend.justification = c(0, 1)) +
-  labs(x = l_legend,
+         color = guide_legend(title = bquote("Self-recruitment ("~d[`M,M`]~")"),
+                              title.position = "top",
+                              title.hjust = 0.5)) +
+  theme(legend.position = "top") +
+  labs(x = L_legend,
        y = "")
 
 L_X_and_dispersal_plot
@@ -381,7 +362,7 @@ L_X_and_dispersal_plot
 ### --------------
 
 
-figure2_subplots <- plot_grid(L_X_and_fines_plot,
+figS4_subplots <- plot_grid(L_X_and_fines_plot,
                               L_X_and_enforcement_costs_plot,
                               L_X_and_fishing_costs_plot,
                               L_X_and_dispersal_plot,
@@ -389,14 +370,15 @@ figure2_subplots <- plot_grid(L_X_and_fines_plot,
                               labels = c("B", "C", "D", "E"))
 
 
-figure2 <- plot_grid(optimal_fee_for_L_plot,
-                     figure2_subplots,
+figS4 <- plot_grid(optimal_fee_for_L_plot,
+                     figS4_subplots,
                      ncol = 1,
+                   rel_heights = c(0.8,1),
                      labels = c("A", NA))
 
 
-lazy_ggsave(plot = figure2,
-            filename = "figure_2_optimized_chi",
+lazy_ggsave(plot = figS4,
+            filename = "FigureS4",
             width = 18, height = 22)
 
 
