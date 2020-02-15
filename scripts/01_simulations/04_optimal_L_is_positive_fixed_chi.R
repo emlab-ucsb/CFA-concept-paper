@@ -234,20 +234,6 @@ L_X_and_fishing_costs_plot
 # Plot 5: L vs B for four different dispersal scenarios (chi is fixed)
 ### --------------------------------------------------------------------
 
-# Different dispersal scenarios
-
-make_D <- function(self_rec){
-  
-  exports <- 1 - self_rec
-  
-  D <- matrix(c(self_rec, exports,
-                exports, self_rec),
-              nrow = 2,
-              byrow = T)
-  
-  return(D)
-}
-
 L_X_and_dispersal <- 
   expand_grid(L_try = L_range,
               self_rec = self_rec_range) %>% 
