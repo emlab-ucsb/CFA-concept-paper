@@ -118,3 +118,17 @@ lazy_ggsave <- function(plot, filename, width = 7, height = 5){
          height = height,
          units = "cm")
 }
+
+# Different dispersal scenarios
+# Function that creates a Dispersal matrix
+make_D <- function(self_rec){
+  
+  exports <- 1 - self_rec
+  
+  D <- matrix(c(self_rec, exports,
+                exports, self_rec),
+              nrow = 2,
+              byrow = T)
+  
+  return(D)
+}
