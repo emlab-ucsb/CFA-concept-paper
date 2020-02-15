@@ -70,7 +70,7 @@ L_X_and_enforcement_costs <- expand_grid(L_try = L_range,
                         r = r,
                         K = K,
                         X0 = X0,
-                        s = s,git
+                        s = s,
                         D = D,
                         p = p,
                         q = q,
@@ -129,21 +129,13 @@ L_X_and_fishing_costs <- expand_grid(L_try = L_range,
 
 L_X_and_fishing_costs_heatmap <- 
   ggplot(data = L_X_and_fishing_costs,
-         mapping = aes(x = L_try, y = X_vec / K, group = c_try, color = c_try)) +
-  geom_line() +
-  geom_point() +
+         mapping = aes(x = L_try, y = c_try, fill = X_vec / K)) +
+  geom_raster() +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
-                     labels = paste0(as.character(c_range_multipliers_extend), "x")) +
   plot_theme() +
-  guides(fill = FALSE,
-         size = FALSE,
-         color = guide_legend(title = "Fishing costs (c)",
-                              title.position = "top",
-                              title.hjust = 0.5)) +
-  theme(legend.position = "top") +
-  labs(x = L_legend,
-       y = X_legend_short)
+  labs(x = "",
+       y = bquote("Fishing costs (c)")) +
+  scale_y_discrete(labels = paste0(as.character(alpha_range_multipliers_extend), "x"))
 
 L_X_and_fishing_costs_heatmap
 
@@ -180,24 +172,15 @@ L_X_and_dispersal <-
 
 L_X_and_dispersal_heatmap <- 
   ggplot(data = L_X_and_dispersal,
-         mapping = aes(x = L_try, y = X_vec / K, group = self_rec, color = self_rec)) +
-  geom_line(aes()) +
-  geom_point(aes()) +
+         mapping = aes(x = L_try, y = self_rec, fill = X_vec / K)) +
+  geom_raster() +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
-                     labels = as.character(self_rec_range)) +
   plot_theme() +
-  guides(fill = FALSE,
-         size = FALSE,
-         color = guide_legend(title = bquote("Self-recruitment ("~d[`M,M`]~")"),
-                              title.position = "top",
-                              title.hjust = 0.5)) +
-  theme(legend.position = "top") +
-  labs(x = L_legend,
-       y = "")
+  labs(x = "",
+       y =bquote("Self-recruitment ("~d[`M,M`]~")")) +
+  scale_y_discrete(labels = paste0(as.character(self_rec_range_extend), "x"))
 
 L_X_and_dispersal_heatmap
-
 
 
 
