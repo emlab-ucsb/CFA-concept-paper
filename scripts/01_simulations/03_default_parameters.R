@@ -46,6 +46,12 @@ alpha_range_multipliers <- c(0.1, 0.5, 1, 2, 10)
 c_range_multipliers <- c(0.8, 0.9, 1, 1.1, 1.2)
 chi_range_multipliers <- c(0.1, 0.5, 1, 2, 10)
 
+##  Extended parameter Ranges (multipliers of the default value
+w_range_multipliers_extend <- c(0.1, 0.5, 1, 1.5, 2, 2.5, 5, 7.5, 10)
+alpha_range_multipliers_extend <- c(0.1, 0.5, 1, 1.5, 2, 2.5, 5, 7.5, 10)
+c_range_multipliers_extend <- c(0.8, 0.85, 0.9, 0.95, 1.05, 1.15, 1.2)
+chi_range_multipliers_extend <- c(0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 5, 7.5, 10)
+
 ##############################################################################
 
 # Define some default legends

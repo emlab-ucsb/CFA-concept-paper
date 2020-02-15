@@ -22,7 +22,7 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 ### --------------------------------------------------------
 
 L_X_and_fines <- expand_grid(L_try = L_range,
-                             w_try = (w_range_multipliers*w)) %>% 
+                             w_try = (w_range_multipliers_extend*w)) %>% 
   mutate(results = pmap(.l = list(L = L_try,
                                   w = w_try),
                         .f = wrapper,
@@ -51,9 +51,9 @@ L_X_and_fines_heatmap <-
   geom_raster() +
   scale_fill_viridis_c() +
   plot_theme() +
-  theme(legend.position = "top") +
   labs(x = "",
-       y = X_legend_short)
+       y = bquote("Fine ("~psi~")")) +
+  scale_y_discrete(labels = paste0(as.character(w_range_multipliers_extend), "x"))
 
 L_X_and_fines_heatmap
 
@@ -62,7 +62,7 @@ L_X_and_fines_heatmap
 ### --------------------------------------------------------------------
 
 L_X_and_enforcement_costs <- expand_grid(L_try = L_range,
-                                         alpha_try = alpha_range_multipliers*alpha) %>% 
+                                         alpha_try = alpha_range_multipliers_extend*alpha) %>% 
   mutate(results = pmap(.l = list(L = L_try,
                                   alpha = alpha_try),
                         .f = wrapper,
@@ -70,7 +70,7 @@ L_X_and_enforcement_costs <- expand_grid(L_try = L_range,
                         r = r,
                         K = K,
                         X0 = X0,
-                        s = s,
+                        s = s,git
                         D = D,
                         p = p,
                         q = q,
@@ -93,7 +93,8 @@ L_X_and_enforcement_costs_heatmap <-
   scale_fill_viridis_c() +
   plot_theme() +
   labs(x = "",
-       y = "")
+       y = bquote("Enforcement costs ("~alpha~")")) +
+  scale_y_discrete(labels = paste0(as.character(alpha_range_multipliers_extend), "x"))
 
 L_X_and_enforcement_costs_heatmap
 
@@ -102,7 +103,7 @@ L_X_and_enforcement_costs_heatmap
 ### --------------------------------------------------------------------
 
 L_X_and_fishing_costs <- expand_grid(L_try = L_range,
-                                     c_try = c_range_multipliers*c) %>% 
+                                     c_try = c_range_multipliers_extend*c) %>% 
   mutate(results = pmap(.l = list(L = L_try,
                                   c = c_try),
                         .f = wrapper,
@@ -133,7 +134,7 @@ L_X_and_fishing_costs_heatmap <-
   geom_point() +
   scale_fill_viridis_c() +
   scale_color_brewer(palette = "Set1",
-                     labels = paste0(as.character(c_range_multipliers), "x")) +
+                     labels = paste0(as.character(c_range_multipliers_extend), "x")) +
   plot_theme() +
   guides(fill = FALSE,
          size = FALSE,
