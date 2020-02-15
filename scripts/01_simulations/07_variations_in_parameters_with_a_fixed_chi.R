@@ -145,7 +145,7 @@ L_X_and_fishing_costs_heatmap
 
 L_X_and_dispersal <- 
   expand_grid(L_try = L_range,
-              self_rec = self_rec_range) %>% 
+              self_rec = self_rec_range_extend) %>% 
   mutate(D_try = map(self_rec, make_D)) %>% 
   mutate(results = pmap(.l = list(L = L_try,
                                   D = D_try),
@@ -165,8 +165,7 @@ L_X_and_dispersal <-
                         years = years,
                         want = "All")) %>% 
   unnest(cols = results) %>% 
-  mutate(X_rel = X_r_vec / X_f_vec,
-         self_rec = factor(self_rec, levels = sort(unique(self_rec)))) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec) %>% 
   select(self_rec, L_try, X_vec, X_rel)
 
 
@@ -177,8 +176,7 @@ L_X_and_dispersal_heatmap <-
   scale_fill_viridis_c() +
   plot_theme() +
   labs(x = "",
-       y =bquote("Self-recruitment ("~d[`M,M`]~")")) +
-  scale_y_discrete(labels = paste0(as.character(self_rec_range_extend), "x"))
+       y =bquote("Self-recruitment ("~d[`M,M`]~")"))
 
 L_X_and_dispersal_heatmap
 
