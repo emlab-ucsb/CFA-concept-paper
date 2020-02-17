@@ -20,20 +20,21 @@ all_combinations <- expand_grid(L_try = L_range,
                                 alpha_try = alpha * alpha_range_multipliers,
                                 c_try = c * c_range_multipliers,
                                 chi_try = chi * chi_range_multipliers,
-                                self_rec = self_rec_range) %>%
+                                self_rec = self_rec_range,
+                                p_try = p * p_range_multipliers) %>%
   mutate(D_try = map(self_rec, make_D)) %>% 
   mutate(results = future_pmap(.l = list(chi = chi_try,
                                          L = L_try,
                                          w = w_try,
                                          alpha = alpha_try,
                                          c = c_try,
-                                         D = D_try),
+                                         D = D_try,
+                                         p = p_try),
                                .f = wrapper,
                                r = r,
                                K = K,
                                X0 = X0,
                                s = s,
-                               p = p,
                                q = q,
                                beta = beta,
                                mu = mu,
@@ -54,7 +55,7 @@ density_plot <- all_combinations %>%
   plot_theme() +
   scale_x_continuous(limits = c(0, 1))
 
-lazy_ggsave(p1, filename = "Figures3", width = 9, height = 6)
+lazy_ggsave(p1, filename = "FigureS3", width = 9, height = 6)
 
 
 
