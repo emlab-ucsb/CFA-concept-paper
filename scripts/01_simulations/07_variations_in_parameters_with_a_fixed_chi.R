@@ -49,7 +49,7 @@ L_X_and_fines_heatmap <-
   ggplot(data = L_X_and_fines,
          mapping = aes(x = L_try, y = w_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(name = X_legend_short) +
   plot_theme() +
   labs(x = "",
        y = bquote("Fine ("~psi~")")) +
@@ -90,7 +90,7 @@ L_X_and_enforcement_costs_heatmap <-
   ggplot(data = L_X_and_enforcement_costs,
          mapping = aes(x = L_try, y = alpha_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(name = X_legend_short) +
   plot_theme() +
   labs(x = "",
        y = bquote("Enforcement costs ("~alpha~")")) +
@@ -103,7 +103,7 @@ L_X_and_enforcement_costs_heatmap
 ### --------------------------------------------------------------------
 
 L_X_and_fishing_costs <- expand_grid(L_try = L_range,
-                                     c_try = c_range_multipliers_extend*c) %>% 
+                                     c_try = c * c_range_multipliers_extend) %>% 
   mutate(results = pmap(.l = list(L = L_try,
                                   c = c_try),
                         .f = wrapper,
@@ -131,11 +131,11 @@ L_X_and_fishing_costs_heatmap <-
   ggplot(data = L_X_and_fishing_costs,
          mapping = aes(x = L_try, y = c_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(name = X_legend_short) +
   plot_theme() +
   labs(x = "",
        y = bquote("Fishing costs (c)")) +
-  scale_y_discrete(labels = paste0(as.character(alpha_range_multipliers_extend), "x"))
+  scale_y_discrete(labels = paste0(as.character(c_range_multipliers_extend), "x"))
 
 L_X_and_fishing_costs_heatmap
 
@@ -173,12 +173,122 @@ L_X_and_dispersal_heatmap <-
   ggplot(data = L_X_and_dispersal,
          mapping = aes(x = L_try, y = self_rec, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(name = X_legend_short) +
   plot_theme() +
   labs(x = "",
        y =bquote("Self-recruitment ("~d[`M,M`]~")"))
 
 L_X_and_dispersal_heatmap
+
+
+### --------------------------------------------------------------------
+# Plot 5: L vs B for four different access fee scenarios (chi)
+### --------------------------------------------------------------------
+
+L_X_and_chi <- 
+  expand_grid(L_try = L_range,
+              chi_try = chi * chi_range_multipliers_extend) %>% 
+  mutate(results = pmap(.l = list(L = L_try,
+                                  chi = chi_try),
+                        .f = wrapper,
+                        r = r,
+                        K = K,
+                        X0 = X0,
+                        s = s,
+                        D = D,
+                        p = p,
+                        q = q,
+                        c = c,
+                        beta = beta,
+                        alpha = alpha,
+                        mu = mu,
+                        w = w,
+                        years = years,
+                        want = "All")) %>% 
+  unnest(cols = results) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec,
+         chi_try = factor(chi_try, levels = sort(unique(chi_try)))) %>% 
+  select(chi_try, L_try, X_vec, X_rel)
+
+
+L_X_and_chi_heatmap <- 
+  ggplot(data = L_X_and_chi,
+         mapping = aes(x = L_try, y = chi_try, fill = X_vec / K)) +
+  geom_raster() +
+  scale_fill_viridis_c(name = X_legend_short) +
+  plot_theme() +
+  labs(x = "",
+       y = bquote("Access fee ("~chi~")")) +
+  scale_y_discrete(labels = paste0(as.character(chi_range_multipliers_extend), "x"))
+
+L_X_and_chi_heatmap
+
+
+### --------------------------------------------------------------------
+# Plot 6: L vs B for four different prices for catch (fixed chi)
+### --------------------------------------------------------------------
+
+L_X_and_p <- 
+  expand_grid(L_try = L_range,
+              p_try = p * p_range_multipliers) %>% 
+  mutate(results = pmap(.l = list(L = L_try,
+                                  p = p_try),
+                        .f = wrapper,
+                        chi = chi,
+                        r = r,
+                        K = K,
+                        X0 = X0,
+                        s = s,
+                        D = D,
+                        q = q,
+                        c = c,
+                        beta = beta,
+                        alpha = alpha,
+                        mu = mu,
+                        w = w,
+                        years = years,
+                        want = "All")) %>% 
+  unnest(cols = results) %>% 
+  mutate(X_rel = X_r_vec / X_f_vec,
+         p_try = factor(p_try, levels = sort(unique(p_try)))) %>% 
+  select(p_try, L_try, X_vec, X_rel)
+
+
+L_X_and_p_heatmap <- 
+  ggplot(data = L_X_and_p,
+         mapping = aes(x = L_try, y = p_try, fill = X_vec / K)) +
+  geom_raster() +
+  scale_fill_viridis_c(name = X_legend_short) +
+  plot_theme() +
+  labs(x = "",
+       y = "Price of fish (p)") +
+  scale_y_discrete(labels = paste0(as.character(p_range_multipliers), "x"))
+
+L_X_and_p_heatmap
+
+
+### ------------------------------------------------------------------
+# MAIN PLOT
+### ------------------------------------------------------------------
+
+
+
+main_plot <- plot_grid(L_X_and_fines_heatmap,
+                       L_X_and_enforcement_costs_heatmap,
+                       L_X_and_fishing_costs_heatmap,
+                       L_X_and_dispersal_heatmap,
+                       L_X_and_chi_heatmap,
+                       L_X_and_p_heatmap,
+                       ncol = 2)
+
+main_plot
+
+lazy_ggsave(main_plot,
+            filename = "FigureS2")
+
+
+
+
 
 
 
