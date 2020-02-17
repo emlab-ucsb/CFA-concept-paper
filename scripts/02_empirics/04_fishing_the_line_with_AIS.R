@@ -39,14 +39,14 @@ increment <- 5 # Increment, in kilometers
 fishing_in_5k_increments <- effort_data %>% 
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year > 2015) %>% 
-  filter(wdpaid %in% c(309888, 555629385, 400011,	220201, 11753)) %>% 
+  filter(wdpaid %in% c(309888, 555629385, 400011, 11753)) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
-  mutate(name = case_when(wdpaid == 309888 ~ "B) PIPA",
-                          wdpaid == 555629385 ~ "D) Revillagigedo",
-                          wdpaid == 400011 ~ "C) PRINMS",
-                          wdpaid == 220201 ~ "A) PNMS",
-                          wdpaid == 11753 ~ "E) Galapagos"),
-         name = fct_relevel(name, c("A) PNMS", "D) Revillagigedo", "B) PIPA", "E) Galapagos", "C) PRINMS")),
+  mutate(name = case_when(wdpaid == 309888 ~ "A) PIPA",
+                          wdpaid == 555629385 ~ "C) Revillagigedo",
+                          wdpaid == 400011 ~ "B) PRINMS",
+                          # wdpaid == 220201 ~ "A) PNMS",
+                          wdpaid == 11753 ~ "D) Galapagos"),
+         name = fct_relevel(name, c("A) PIPA", "C) Revillagigedo", "B) PRINMS", "D) Galapagos")),
          best_vessel_class = str_to_sentence(str_replace_all(best_vessel_class, "_", " "))) %>% 
   group_by(best_vessel_class, name, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T),
@@ -78,7 +78,7 @@ fishing_the_line_select_plot <-
 
 lazy_ggsave(plot = fishing_the_line_select_plot,
             filename = "fig4_fishing_the_line_select_plot",
-            height = 22, width = 18)
+            height = 14, width = 18)
 
 
 
