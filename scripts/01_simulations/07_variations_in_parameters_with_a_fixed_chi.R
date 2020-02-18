@@ -49,11 +49,14 @@ L_X_and_fines_heatmap <-
   ggplot(data = L_X_and_fines,
          mapping = aes(x = L_try, y = w_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
        y = bquote("Fine ("~psi~")")) +
-  scale_y_discrete(labels = paste0(as.character(w_range_multipliers_extend), "x"))
+  scale_y_discrete(labels = paste0(as.character(w_range_multipliers_extend), "x"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  guides(fill = guide_colorbar(ticks.colour = "black",
+                               frame.colour = "black"))
 
 L_X_and_fines_heatmap
 
@@ -90,11 +93,13 @@ L_X_and_enforcement_costs_heatmap <-
   ggplot(data = L_X_and_enforcement_costs,
          mapping = aes(x = L_try, y = alpha_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
        y = bquote("Enforcement costs ("~alpha~")")) +
-  scale_y_discrete(labels = paste0(as.character(alpha_range_multipliers_extend), "x"))
+  scale_y_discrete(labels = paste0(as.character(alpha_range_multipliers_extend), "x"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  theme(legend.position = "none")
 
 L_X_and_enforcement_costs_heatmap
 
@@ -131,11 +136,13 @@ L_X_and_fishing_costs_heatmap <-
   ggplot(data = L_X_and_fishing_costs,
          mapping = aes(x = L_try, y = c_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
        y = bquote("Fishing costs (c)")) +
-  scale_y_discrete(labels = paste0(as.character(c_range_multipliers_extend), "x"))
+  scale_y_discrete(labels = paste0(as.character(c_range_multipliers_extend), "x"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  theme(legend.position = "none")
 
 L_X_and_fishing_costs_heatmap
 
@@ -173,10 +180,13 @@ L_X_and_dispersal_heatmap <-
   ggplot(data = L_X_and_dispersal,
          mapping = aes(x = L_try, y = self_rec, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
-       y =bquote("Self-recruitment ("~d[`M,M`]~")"))
+       y =bquote("Self-recruitment ("~d[`M,M`]~")")) +
+  theme(legend.position = "none") +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0))
 
 L_X_and_dispersal_heatmap
 
@@ -215,11 +225,13 @@ L_X_and_chi_heatmap <-
   ggplot(data = L_X_and_chi,
          mapping = aes(x = L_try, y = chi_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
        y = bquote("Access fee ("~chi~")")) +
-  scale_y_discrete(labels = paste0(as.character(chi_range_multipliers_extend), "x"))
+  scale_y_discrete(labels = paste0(as.character(chi_range_multipliers_extend), "x"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  theme(legend.position = "none")
 
 L_X_and_chi_heatmap
 
@@ -258,11 +270,13 @@ L_X_and_p_heatmap <-
   ggplot(data = L_X_and_p,
          mapping = aes(x = L_try, y = p_try, fill = X_vec / K)) +
   geom_raster() +
-  scale_fill_viridis_c(name = X_legend_short) +
+  scale_fill_viridis_c(name = X_legend_short, limits = c(0.65, 0.9)) +
   plot_theme() +
   labs(x = "",
        y = "Price of fish (p)") +
-  scale_y_discrete(labels = paste0(as.character(p_range_multipliers), "x"))
+  scale_y_discrete(labels = paste0(as.character(p_range_multipliers), "x"), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  theme(legend.position = "none")
 
 L_X_and_p_heatmap
 
@@ -272,8 +286,10 @@ L_X_and_p_heatmap
 ### ------------------------------------------------------------------
 
 
+legend <- get_legend(L_X_and_fines_heatmap)
 
-main_plot <- plot_grid(L_X_and_fines_heatmap,
+main_plot <- plot_grid(L_X_and_fines_heatmap +
+                         theme(legend.position = "none"),
                        L_X_and_enforcement_costs_heatmap,
                        L_X_and_fishing_costs_heatmap,
                        L_X_and_dispersal_heatmap,
@@ -281,10 +297,16 @@ main_plot <- plot_grid(L_X_and_fines_heatmap,
                        L_X_and_p_heatmap,
                        ncol = 2)
 
-main_plot
+plot_with_legend <- plot_grid(main_plot,
+                              legend,
+                              rel_widths = c(9, 1))
 
-lazy_ggsave(main_plot,
-            filename = "FigureS2")
+plot_with_legend
+
+lazy_ggsave(plot = plot_with_legend,
+            filename = "FigureS2",
+            width = 18,
+            height = 22)
 
 
 
