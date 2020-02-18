@@ -61,3 +61,5 @@ p_range_multipliers <- c(0.8, 0.85, 0.9, 0.95, 1.05, 1.15)
 L_legend <- "Proportion as lease area (L)"
 X_legend <- "Equilibrium biomass (X / K)"
 X_legend_short <- "X / K"
+b_legend_days <- "External enforcement budget (# of enforcement days)"
+b_legend_money <- "External enforcement budget (b)"
