@@ -15,7 +15,7 @@ source(here("scripts", "01_simulations", "03_default_parameters.R"))
 plan(multiprocess)
 
 
-all_combinations <- expand_grid(L_try = L_range,
+all_combinations <- expand_grid(L_try = seq(0, 1, by = 0.05),
                                 w_try = w * w_range_multipliers,
                                 alpha_try = alpha * alpha_range_multipliers,
                                 c_try = c * c_range_multipliers,
