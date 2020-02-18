@@ -55,7 +55,7 @@ density_plot <- all_combinations %>%
   plot_theme() +
   scale_x_continuous(limits = c(0, 1))
 
-lazy_ggsave(p1, filename = "FigureS3", width = 9, height = 6)
+lazy_ggsave(density_plot, filename = "FigureS3", width = 9, height = 6)
 
 
 
