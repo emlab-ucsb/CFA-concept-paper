@@ -38,7 +38,6 @@ fast_check <- function(chi, r, K, X0, D, p, q, c, beta, L, alpha, mu, w, years, 
 
 #### FIGURE STUFF ####
 # Plot theme function
-
 plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
   
   half_line <- font_size / 2
@@ -64,7 +63,7 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
         debug = FALSE),
       strip.text = element_text(
         hjust = 0,
-        size = rel(0.8), margin = margin(b = 10)),
+        margin = margin(b = 10)),
       plot.title = element_text(
         family = font_family,
         face = "plain",
@@ -102,8 +101,6 @@ plot_theme <- function (font_size = 10, font_family = "", line_size = 0.5) {
 }
 
 
-
-
 # Save function
 # The function saves figures as png and pdf
 lazy_ggsave <- function(plot, filename, width = 7, height = 5){
@@ -111,11 +108,27 @@ lazy_ggsave <- function(plot, filename, width = 7, height = 5){
   ggsave(plot = plot,
          here("results", "img", paste0(filename, ".png")),
          width = width,
-         height = height)
+         height = height,
+         units = "cm")
   
   # Save as pdf
   ggsave(plot = plot,
          here("results", "img", paste0(filename, ".pdf")),
          width = width,
-         height = height)
+         height = height,
+         units = "cm")
+}
+
+# Different dispersal scenarios
+# Function that creates a Dispersal matrix
+make_D <- function(self_rec){
+  
+  exports <- 1 - self_rec
+  
+  D <- matrix(c(self_rec, exports,
+                exports, self_rec),
+              nrow = 2,
+              byrow = T)
+  
+  return(D)
 }

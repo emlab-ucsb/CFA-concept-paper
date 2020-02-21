@@ -36,60 +36,19 @@ write.csv(x = effort_data,
 
 increment <- 5 # Increment, in kilometers
 
-fishing_in_5k_increments <- 
-  effort_data %>% 
-  filter(!wdpaid %in% c(555556875)) %>%
-  # filter(best_vessel_class == "drifting_longlines") %>%
+fishing_in_5k_increments <- effort_data %>% 
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
-  filter(year > 2016) %>% 
+  filter(year > 2015) %>% 
+  filter(wdpaid %in% c(309888, 555629385, 400011, 11753)) %>% 
   mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
-  mutate(iucn_cat = case_when(iucn_cat %in% c(1, 2) ~ "I - II",
-                              iucn_cat %in% c(3, 4) ~ "III - IV",
-                              T ~ "Others (IV - VI)")) %>% 
-  group_by(best_vessel_class, iucn_cat, dist) %>%                         # Define grouping variables
-  summarize(fishing = mean(fishing_hours, na.rm = T),
-            sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
-  ungroup() %>% 
-  mutate(inside = dist <= 0) %>%
-  ungroup()
-
-# Create figure
-fishing_the_line_plot <- 
-  ggplot(data = fishing_in_5k_increments,
-         aes(x = dist, y = fishing,
-             fill = best_vessel_class)) +
-  geom_smooth(method = "loess", se = F, color = "black") +
-  geom_point(color = "black", shape = 21, size = 2) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_fill_brewer(palette = "Set1") +
-  facet_wrap( ~ iucn_cat) +
-  plot_theme() +
-  guides(fill = guide_legend("Gear")) +
-  labs(x = "Distance from border (Km)",
-       y = "Mean fishing effort (hours)")
-
-# Export figure
-lazy_ggsave(plot = fishing_the_line_plot,
-            filename = "fishing_the_line_plot",
-            height = 3, width = 6)
-
-# END OF SCRIPT 
-
-
-
-# Cherry picking
-fishing_the_line_select_plot <- effort_data %>% 
-  filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
-  filter(year > 2016) %>% 
-  filter(wdpaid %in% c(309888, 555629385, 400011,	220201, 11753)) %>% 
-  mutate(dist = round(distance / (increment * 1e3)) * increment) %>%  # Mutate the distance to group by a common bin
-  mutate(name = case_when(wdpaid == 309888 ~ "PIPA",
-                          wdpaid == 555629385 ~ "Revillagigedo",
-                          wdpaid == 400011 ~ "PRINMS",
-                          wdpaid == 220201 ~ "PNMS",
-                          wdpaid == 11753 ~ "Galapagos"),
-         name = fct_relevel(name, c("Galapagos", "Revillagigedo"), after = Inf),
-         best_vessel_class = str_replace_all(best_vessel_class, "_", " ")) %>% 
+  mutate(name = case_when(wdpaid == 309888 ~ "A) PIPA",
+                          wdpaid == 555629385 ~ "C) Revillagigedo",
+                          wdpaid == 400011 ~ "B) PRIMNM",
+                          # wdpaid == 220201 ~ "A) PNMS",
+                          wdpaid == 11753 ~ "D) Galapagos"),
+         name = fct_relevel(name, c("A) PIPA", "C) Revillagigedo", "B) PRIMNM", "D) Galapagos")),
+         best_vessel_class = str_to_sentence(str_replace_all(best_vessel_class, "_", " ")),
+         best_vessel_class = fct_relevel(best_vessel_class, c("Tuna purse seines", "Drifting longlines"))) %>% 
   group_by(best_vessel_class, name, dist) %>%                         # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T),
             sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
@@ -98,25 +57,142 @@ fishing_the_line_select_plot <- effort_data %>%
   mutate(n = n()) %>%  
   ungroup() %>% 
   filter(n > 10) %>% 
-  mutate(inside = dist <= 0) %>% 
-  ggplot(aes(x = dist, y = fishing,
-             fill = best_vessel_class)) +
+  mutate(inside = dist <= 0)
+
+
+# ### --------------------------------------------------------------------
+# # Plot 1: PIPA
+# ### --------------------------------------------------------------------
+
+pipa <- fishing_in_5k_increments %>%
+  dplyr::filter(name == "A) PIPA") %>%
+  ggplot()+
+  aes(x = dist, y = fishing, fill = best_vessel_class)+
   geom_smooth(method = "loess", se = F, color = "black") +
   geom_point(color = "black", shape = 21, size = 2) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_fill_brewer(palette = "Set1") +
   scale_y_continuous(limits = c(0, NA)) +
-  facet_wrap(~ name, scales = "free_y") +
+  #facet_wrap(~ name, scales = "free_y", ncol = 2) +
   plot_theme() +
-  theme(legend.justification = c(0, 1),
-        legend.position = c(2/3, 0.45)) +
-  guides(fill = guide_legend(title = "Gear")) +
-  labs(x = "Distance from border (Km)",
-       y = "Mean fishing effort (hours)")
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(title = "Gear",
+                             title.position = "top",
+                             title.hjust = 0.5)) +
+  labs(x = "",
+       y = "Mean fishing effort (h)")
 
-lazy_ggsave(plot = fishing_the_line_select_plot,
-            filename = "fishing_the_line_select_plot",
-            height = 3, width = 6)
+# ### --------------------------------------------------------------------
+# # Plot 2: PRIMNM
+# ### --------------------------------------------------------------------
+
+primnm <- fishing_in_5k_increments %>%
+  dplyr::filter(name == "B) PRIMNM") %>%
+  ggplot()+
+  aes(x = dist, y = fishing, fill = best_vessel_class)+
+  geom_smooth(method = "loess", se = F, color = "black") +
+  geom_point(color = "black", shape = 21, size = 2) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(limits = c(0, NA)) +
+  #facet_wrap(~ name, scales = "free_y", ncol = 2) +
+  plot_theme() +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(title = "Gear",
+                             title.position = "top",
+                             title.hjust = 0.5)) +
+  labs(x = "Distance from border (km)",
+       y = "Mean fishing effort (h)")
+
+# ### --------------------------------------------------------------------
+# # Plot 3: PIPA
+# ### --------------------------------------------------------------------
+
+rev <- fishing_in_5k_increments %>%
+  dplyr::filter(name == "C) Revillagigedo") %>%
+  ggplot()+
+  aes(x = dist, y = fishing, fill = best_vessel_class)+
+  geom_smooth(method = "loess", se = F, color = "black") +
+  geom_point(color = "black", shape = 21, size = 2) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(limits = c(0, NA)) +
+  #facet_wrap(~ name, scales = "free_y", ncol = 2) +
+  plot_theme() +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(title = "Gear",
+                             title.position = "top",
+                             title.hjust = 0.5)) +
+  labs(x = "",
+       y = "",
+       title = "")
+
+# ### --------------------------------------------------------------------
+# # Plot 4: Galapagos
+# ### --------------------------------------------------------------------
+
+galapagos <- fishing_in_5k_increments %>%
+  dplyr::filter(name == "D) Galapagos") %>%
+  ggplot()+
+  aes(x = dist, y = fishing, fill = best_vessel_class)+
+  geom_smooth(method = "loess", se = F, color = "black") +
+  geom_point(color = "black", shape = 21, size = 2) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(limits = c(0, NA)) +
+  #facet_wrap(~ name, scales = "free_y", ncol = 2) +
+  plot_theme() +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(title = "Gear",
+                             title.position = "top",
+                             title.hjust = 0.5)) +
+  labs(x = "Distance from border (km)",
+       y = "")
+
+
+# ### --------------------------------------------------------------------
+# # Extract legend and combine
+# ### --------------------------------------------------------------------
+
+no_legend <- theme(legend.position = "none")
+more_height <- theme(plot.margin = unit(c(5,1,1,1), "mm"))
+even_more_height <- theme(plot.margin = unit(c(10,1,1,1), "mm"))
+
+fig3_top_row <- plot_grid(pipa + no_legend + more_height,
+                          rev + no_legend + more_height,
+                          ncol = 2,
+                          align = "vh",
+                          labels = c("A) PIPA", "C) Revillagigedo"),
+                          vjust = 1.5,
+                          hjust = -0.1)
+
+fig3_bottom_row <- plot_grid(primnm + no_legend + even_more_height,
+                             galapagos + no_legend + even_more_height,
+                             ncol = 2,
+                             align = "vh",
+                             labels = c("B) PRIMNM", "D) Galapagos"),
+                             vjust = 1.5,
+                             hjust = -0.1)
+
+combine <- plot_grid(fig3_top_row,
+                     fig3_bottom_row,
+                     ncol = 1,
+                     align = "hv")
+
+legend <- get_legend(
+  # create some space to the left of the legend
+  pipa + theme(legend.box.margin = margin(5, 0, 5, 0))
+)
+
+
+fig3 <- plot_grid(legend,
+                  combine,
+                  ncol = 1,
+                  rel_heights = c(0.1,1))
+
+lazy_ggsave(plot = fig3,
+            filename = "Figure3",
+            height = 18, width = 18)
 
 
 
