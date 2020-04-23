@@ -60,7 +60,8 @@ wdpaid_discard <- c("10708",     # Galapagos, same as 11753
                     "2628")
 
 no_takes <- c("309888", # PIPA is no take for industrials
-              "400011") # PRINMS is no take for industrials
+              "400011", # PRINMS is no take for industrials
+              "902308") # Revilla core is no take
 
 take <- c("555586806", # Research area, I call BS
           "555586979", # Mid atlantic, just a US management area
@@ -75,11 +76,12 @@ take <- c("555586806", # Research area, I call BS
 no_take_lsmpa_boundaries <-
   mpa_boundaries %>%
   filter(!wdpaid %in% wdpaid_discard) %>%                     # Remove duplicates
-  filter(area_km > 1e5) %>%                                   # Keep areas larger than 10,000 Km2
+  filter(area_km > 5e3) %>%                                   # Keep areas larger than 5,000 Km2
   filter(year != 0) %>%                                       # Remove ones with missing year
   mutate(iucn_cat = case_when(wdpaid == 309888 ~ "Ib",
                               wdpaid == 400011 ~ "Ib",
                               wdpaid == 11753 ~ "IV",
+                              wdpaid == 555622041 ~ "Ia",
                               T ~ iucn_cat)) %>% 
   st_make_valid() %>%                                         # Fix weird polygons
   group_by(wdpaid, name, no_take, iucn_cat) %>%
@@ -87,7 +89,7 @@ no_take_lsmpa_boundaries <-
   ungroup() %>% 
   select(-a) %>% 
   st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
-  st_transform(crs = 54009) %>%                               # Reproject to Mollweide (https://epsg.io/54009)
+  st_transform(crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs") %>%                               # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
   mutate(iucn_cat_rast = case_when(iucn_cat %in% c("Ia", "Ib") ~ 1,
                                    iucn_cat == "II" ~ 2,
