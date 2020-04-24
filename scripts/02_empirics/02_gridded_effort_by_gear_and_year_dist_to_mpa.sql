@@ -22,12 +22,16 @@ WITH
     best.best_vessel_class,
     best.best_engine_power_kw
   FROM
-    `world-fishing-827.gfw_research.vi_ssvid_v20190430`
+    `world-fishing-827.gfw_research.vi_ssvid_v20190430`  
   WHERE
     best.best_vessel_class IN ("tuna_purse_seines",
       "drifting_longlines")
     AND on_fishing_list_best
-    AND activity.active_hours > 0),
+    AND CAST(ssvid AS int64) NOT IN (SELECT ssvid FROM `world-fishing-827.gfw_research.bad_mmsi` CROSS JOIN UNNEST(ssvid) AS ssvid)
+    AND activity.overlap_hours_multinames = 0
+    AND activity.overlap_hours < 24*3
+    AND activity.active_hours > 24
+    AND activity.offsetting IS FALSE),
   #
   #
   #
@@ -45,7 +49,7 @@ WITH
     CAST(FLOOR(lon / 0.1) * 0.1 AS NUMERIC) + 0.05 AS lon,
     SUM(hours) AS fishing_hours
   FROM
-    `world-fishing-827.gfw_research.pipe_production_v20190502_fishing`
+    `world-fishing-827.gfw_research.pipe_v20190502_fishing`  
   LEFT JOIN
     vessels_i_want
   USING
@@ -58,7 +62,8 @@ WITH
       `vessels_i_want`)
     AND nnet_score > 0.5
     AND distance_from_shore_m > 1000
-    AND DATE(_PARTITIONTIME) > "2015-12-31"
+    AND timestamp > TIMESTAMP("2015-12-31")
+    AND timestamp < TIMESTAMP("2020-01-01")
   GROUP BY
     year,
     lat,
