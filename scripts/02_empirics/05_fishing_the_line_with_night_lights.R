@@ -29,10 +29,11 @@ write.csv(x = night_lights_data,
           file = here("data", "gridded_night_lights_by_year_dist_to_mpa.csv"),
           row.names = F)
 
-increment <- 10
+## Timeseries
+increment <- 5
 
 night_lights_in_10k_increments <- night_lights_data %>%
-  filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
+  filter(between(distance, -100e3, 100e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year > 2016) %>%
   mutate(dist = round(distance / (10 * 1e3)) * 10) %>%  # Mutate the distance to group by a common bin
   filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
@@ -46,8 +47,9 @@ night_lights_in_10k_increments <- night_lights_data %>%
                           wdpaid == 11753 ~ "Galapagos"),
          name = fct_relevel(name, c("Galapagos", "Revillagigedo"), after = Inf)) %>% 
   group_by(name, dist) %>%                                            # Define grouping variables
-  summarize(rad = sum(sum_rad, na.rm = T)) %>%                        # Calculate total
-  ungroup()
+  summarize(rad = mean(sum_rad, na.rm = T)) %>%                        # Calculate total
+  ungroup() %>% 
+  filter(rad < quantile(rad, 0.90))
 
 
 fishing_the_line_night_lights_plot <- 

@@ -50,7 +50,7 @@ fishing_in_5k_increments <- effort_data %>%
          name = fct_relevel(name, c("A) PIPA", "C) Revillagigedo", "B) PRIMNM", "D) Galapagos")),
          best_vessel_class = str_to_sentence(str_replace_all(best_vessel_class, "_", " ")),
          best_vessel_class = fct_relevel(best_vessel_class, c("Tuna purse seines", "Drifting longlines"))) %>% 
-  group_by(best_vessel_class, name, dist, year) %>%                         # Define grouping variables
+  group_by(best_vessel_class, name, dist) %>%                  # Define grouping variables
   summarize(fishing = mean(fishing_hours, na.rm = T),
             sd = sd(fishing_hours, na.rm = T)) %>%             # Calculate average
   ungroup() %>% 
@@ -112,14 +112,14 @@ primnm <- fishing_in_5k_increments %>%
 rev <- fishing_in_5k_increments %>%
   dplyr::filter(name == "C) Revillagigedo") %>%
   ggplot()+
-  aes(x = dist, y = fishing_hours, fill = best_vessel_class)+
+  aes(x = dist, y = fishing, fill = best_vessel_class)+
   geom_smooth(method = "loess", se = F, color = "black") +
   geom_point(color = "black", shape = 21, size = 2) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_fill_brewer(palette = "Set1") +
   scale_y_continuous(limits = c(0, NA)) +
   #facet_wrap(~ name, scales = "free_y", ncol = 2) +
-  facet_wrap(~ year) +
+  # facet_wrap(~ year) +
   plot_theme() +
   theme(legend.position = "top") +
   guides(fill = guide_legend(title = "Gear",
@@ -128,15 +128,6 @@ rev <- fishing_in_5k_increments %>%
   labs(x = "",
        y = "",
        title = "")
-
-fishing_in_5k_increments %>% 
-  mutate(inside = dist <= 0) %>% 
-  dplyr::filter(name == "C) Revillagigedo") %>%
-  ggplot() +
-  geom_raster(data = filter(wdpa_pid_table, wdpaid == 555629385), aes(x = lon, y = lat, fill = wdpaid)) +
-  geom_sf(data = a, fill = "transparent") +
-  geom_raster(aes(x = lon, y = lat, fill = fishing_hours)) +
-  facet_grid(year ~ inside)
 
 # ### --------------------------------------------------------------------
 # # Plot 4: Galapagos

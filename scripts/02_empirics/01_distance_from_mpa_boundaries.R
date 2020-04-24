@@ -91,7 +91,7 @@ no_take_lsmpa_boundaries <-
   ungroup() %>% 
   select(-a) %>% 
   st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
-  st_transform(crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ") %>%                               # Reproject to Mollweide (https://epsg.io/54009)
+  st_transform(crs = "ESRI:54009") %>%                        # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
   mutate(iucn_cat_rast = case_when(iucn_cat %in% c("Ia", "Ib") ~ 1,
                                    iucn_cat == "II" ~ 2,
@@ -175,24 +175,19 @@ distance_final <- projectRaster(distance_raster, crs = lonlat_crs, res = 0.1)
 distance_final[distance_final > 100 * 1e3 * 1.854] <- NA
 
 # Visual check #6
-mapview::mapview(distance_final)
+mapview::mapview(list(distance_final, no_take_lsmpa_boundaries[, "iucn_cat"]))
 
 ## TABULIZE ################################################################################
 # The next step is to make the rasters into a table that can be uploaded to GBQ
-# wdpa_pid first
-wdpa_pid_table <- as.data.frame(wdpaid_raster, xy = T) %>% 
-  rename(lon = x, lat = y, wdpaid = layer)
+# First I will stack them to make sure they are aligned.
 
-iucn_cat_table <- as.data.frame(iucn_cat_raster, xy = T) %>% 
-  rename(lon = x, lat = y, iucn_cat = layer)
+stacked_rasters <- stack(wdpaid_raster,
+                         iucn_cat_raster,
+                         distance_final)
 
-# Now distance
-distance_final_table <- as.data.frame(distance_final, xy = T) %>% 
-  rename(lon = x, lat = y, distance = layer)
-
-# Cobmine them
-output_table <- full_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>%
-  left_join(iucn_cat_table, by = c("lon", "lat")) %>% 
+# We now convert it to a data.frame
+output_table <- as.data.frame(stacked_rasters, xy = T) %>% 
+  rename(lon = x, lat = y, wdpaid = layer.1, iucn_cat = layer.2, distance = layer.3) %>% 
   mutate_at(vars(lon, lat), function(x){(floor(x / 0.1) * 0.1) + 0.05}) %>% 
   drop_na(distance)
 
