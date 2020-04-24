@@ -29,6 +29,7 @@ library(fasterize)
 library(janitor)
 library(tidyverse)
 
+
 ## Load helper functions
 source(here("scripts", "00_helpers.R"))
 
@@ -57,6 +58,7 @@ wdpaid_discard <- c("10708",     # Galapagos, same as 11753
                     "555512062", # Kermadek, same as 478297
                     "555586815", # Mariana trench, same as 400010
                     "555622118", # PNMS, to be implemented in 2020
+                    "555624307", # Pacífico Mexicano Profundo
                     "2628")
 
 no_takes <- c("309888", # PIPA is no take for industrials
@@ -89,7 +91,7 @@ no_take_lsmpa_boundaries <-
   ungroup() %>% 
   select(-a) %>% 
   st_cast("MULTIPOLYGON") %>%                                 # Cast to multipolygon
-  st_transform(crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs") %>%                               # Reproject to Mollweide (https://epsg.io/54009)
+  st_transform(crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs ") %>%                               # Reproject to Mollweide (https://epsg.io/54009)
   nngeo::st_remove_holes() %>%                                # Keep the boundary only (i.e. remove interior borders)
   mutate(iucn_cat_rast = case_when(iucn_cat %in% c("Ia", "Ib") ~ 1,
                                    iucn_cat == "II" ~ 2,
@@ -108,7 +110,7 @@ st_write(obj = no_take_lsmpa_boundaries,
          dsn = here("data", "no_take_lsmpa_boundaries.gpkg"))
 
 # Visual check #1
-plot(no_take_lsmpa_boundaries[, "iucn_cat"])
+# mapview::mapview(no_take_lsmpa_boundaries[, "iucn_cat"])
 
 ## Rassterization
 # The first step is to create a reference raster that covers the whole world
@@ -133,7 +135,7 @@ wdpaid_raster <-
                 method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #2
-plot(wdpaid_raster)
+mapview::mapview(wdpaid_raster)
 
 # Now the one with IUCN categories
 iucn_cat_raster <- 
@@ -146,7 +148,7 @@ iucn_cat_raster <-
                 method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #3
-plot(iucn_cat_raster)
+mapview::mapview(iucn_cat_raster)
 
 # Now, we'll create the distance to border raster.
 # This will be composed of two rasters:
@@ -156,7 +158,7 @@ outside_raster <- fasterize(no_take_lsmpa_boundaries, r)        # Rasterize the 
 distance_outside <- distance(outside_raster)                    # Calculate the distance to the boundaries
 
 # Visual check #4
-plot(distance_outside)
+mapview::mapview(distance_outside)
 
 # Now we repeat the process but calculate distance form inside (negative numbers)
 inside_raster <- is.na(outside_raster)                          # A raster with 1 and 0 for outside / inside
@@ -164,7 +166,7 @@ inside_raster[inside_raster == 0] <- NA                         # Replace 0 (ins
 distance_inside <- - distance(inside_raster)                    # Calculate distance to border (note the "-")
 
 # Visual check #5
-plot(distance_inside)
+mapview::mapview(distance_inside)
 
 # We'll now combine both
 distance_raster <- distance_outside
@@ -173,7 +175,7 @@ distance_final <- projectRaster(distance_raster, crs = lonlat_crs, res = 0.1)
 distance_final[distance_final > 100 * 1e3 * 1.854] <- NA
 
 # Visual check #6
-plot(distance_final)
+mapview::mapview(distance_final)
 
 ## TABULIZE ################################################################################
 # The next step is to make the rasters into a table that can be uploaded to GBQ
@@ -189,7 +191,7 @@ distance_final_table <- as.data.frame(distance_final, xy = T) %>%
   rename(lon = x, lat = y, distance = layer)
 
 # Cobmine them
-output_table <- left_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>%
+output_table <- full_join(distance_final_table, wdpa_pid_table, by = c("lon", "lat")) %>%
   left_join(iucn_cat_table, by = c("lon", "lat")) %>% 
   mutate_at(vars(lon, lat), function(x){(floor(x / 0.1) * 0.1) + 0.05}) %>% 
   drop_na(distance)

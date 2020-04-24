@@ -130,12 +130,13 @@ rev <- fishing_in_5k_increments %>%
        title = "")
 
 fishing_in_5k_increments %>% 
-  filter(distance < 0) %>% 
+  mutate(inside = dist <= 0) %>% 
   dplyr::filter(name == "C) Revillagigedo") %>%
-  ggplot() + 
-  geom_sf(data = a) +
+  ggplot() +
+  geom_raster(data = filter(wdpa_pid_table, wdpaid == 555629385), aes(x = lon, y = lat, fill = wdpaid)) +
+  geom_sf(data = a, fill = "transparent") +
   geom_raster(aes(x = lon, y = lat, fill = fishing_hours)) +
-  facet_wrap(~ year)
+  facet_grid(year ~ inside)
 
 # ### --------------------------------------------------------------------
 # # Plot 4: Galapagos
