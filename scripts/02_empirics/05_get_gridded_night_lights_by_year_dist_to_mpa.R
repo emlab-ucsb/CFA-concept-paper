@@ -1,4 +1,5 @@
 # Load packages
+library(here)
 library(connections)
 library(bigrquery)
 library(tidyverse)
@@ -23,5 +24,5 @@ data <- tbl(ocean_halos_v2, table_name) %>%
 
 # Save the data
 write.csv(x = data,
-          file = here("data", paste0(table_name, ".cdv")),
+          file = here("data", paste0(table_name, ".csv")),
           row.names = F)

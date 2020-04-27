@@ -1,4 +1,5 @@
 # Load packages
+library(here)
 library(connections)
 library(bigrquery)
 library(tidyverse)
@@ -18,10 +19,10 @@ ocean_halos_v2 <- connection_open(
 table_name <- "gridded_effort_by_gear_and_year_dist_to_mpa"
 
 # Download the data (and export it)
-effort_data <- tbl(ocean_halos_v2, table_name) %>% 
+data <- tbl(ocean_halos_v2, table_name) %>% 
   collect()
 
 # Save the data
-write.csv(x = effort_data,
-          file = here("data", paste0(table_name, ".cdv")),
+write.csv(x = data,
+          file = here("data", paste0(table_name, ".csv")),
           row.names = F)
