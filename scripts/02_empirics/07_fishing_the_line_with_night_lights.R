@@ -13,23 +13,14 @@ library(bigrquery)
 library(cowplot)
 library(tidyverse)
 
-## Load helper functions
+# Load helper functions
 source(here("scripts", "00_helpers.R"))
 
-ucsb_project <- "emlab-gcp" # Name of our project
+# Load data
+night_lights_data <- read.csv(here("data", "gridded_night_lights_by_year_dist_to_mpa.csv"),
+                              stringsAsFactors = F)
 
 
-night_lights_table <- 
-  bq_table(project = ucsb_project,
-           dataset = "ocean_halos_v2",
-           table = "gridded_night_lights_by_year_dist_to_mpa")
-
-night_lights_data <- bigrquery::bq_table_download(x = night_lights_table)
-write.csv(x = night_lights_data,
-          file = here("data", "gridded_night_lights_by_year_dist_to_mpa.csv"),
-          row.names = F)
-
-## Timeseries
 increment <- 5
 
 night_lights_in_10k_increments <- night_lights_data %>%

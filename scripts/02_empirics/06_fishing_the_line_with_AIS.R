@@ -13,17 +13,21 @@ library(bigrquery)
 library(cowplot)
 library(tidyverse)
 
-## Load helper functions
+# Load helper functions
 source(here("scripts", "00_helpers.R"))
+
+# Load data
+effort_data <- read.csv(here("data", "gridded_effort_by_gear_and_year_dist_to_mpa.csv"),
+                        stringsAsFactors = F)
 
 # Modify the data for plotting purposes
 # We will calculate the AVERAGE fishing hours
 # for each 5 Km increments.
 
-increment <- 5 # Increment, in kilometers
+increment <- 5                                                        # Increment, in kilometers
 
 fishing_in_5k_increments <- effort_data %>% 
-  # filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
+  filter(between(distance, -100e3, 150e3)) %>%                        # Keep only data in a 100 Km buffer from the line
   filter(year >= 2016) %>%
   filter(!(year <= 2017 & wdpaid == 555629385)) %>%
   filter(wdpaid %in% c(309888, 555629385, 400011, 11753)) %>% 
@@ -92,7 +96,7 @@ primnm <- fishing_in_5k_increments %>%
        y = "Mean fishing effort (h)")
 
 # ### --------------------------------------------------------------------
-# # Plot 3: PIPA
+# # Plot 3: REVILLA
 # ### --------------------------------------------------------------------
 
 rev <- fishing_in_5k_increments %>%
@@ -121,6 +125,7 @@ rev <- fishing_in_5k_increments %>%
 
 galapagos <- fishing_in_5k_increments %>%
   dplyr::filter(name == "D) Galapagos") %>%
+  filter(fishing < quantile(fishing, 0.99)) %>% 
   ggplot()+
   aes(x = dist, y = fishing, fill = best_vessel_class)+
   geom_smooth(method = "loess", se = F, color = "black") +

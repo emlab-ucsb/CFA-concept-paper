@@ -1,0 +1,12 @@
+location,name,sci_name,dist_from_release,util_95,util_50,source,url
+Northestern Pacific,Yellowfin,Thunnus albacares,1445,258730,21260,"Schaefer et al., 2007",https://link.springer.com/article/10.1007/s00227-007-0689-x
+Pacific (Baja),Yellowfin,Thunnus albacares,1358,642179,66511,"Schaefer et al., 2011",https://www-sciencedirect-com.proxy.library.ucsb.edu:9443/science/article/pii/S016578361100275X
+Revillagigedo,Yellowfin,Thunnus albacares,1501,,,"Schaefer et al., 2013",https://onlinelibrary.wiley.com/doi/abs/10.1111/fog.12047
+Northwestern Atlantic,Bluefin,Thunnus thynnus,,,,"Wilson et al., 2004",https://link.springer.com/article/10.1007/s00227-004-1445-0
+Central Equatorial Pacific,Bigeye,Thunnus obesus,6700,6624890,,"Schaefer et al., 2015",https://doi.org/10.1016/j.fishres.2014.08.018
+Central Equatorial Pacific,Bigeye,Thunnus obesus,6700,5355822,,"Schaefer et al., 2015",https://doi.org/10.1016/j.fishres.2014.08.018
+Central Equatorial Pacific,Bigeye,Thunnus obesus,6700,9043356,,"Schaefer et al., 2015",https://doi.org/10.1016/j.fishres.2014.08.018
+Central Equatorial Pacific,Bigeye,Thunnus obesus,6700,246791,,"Schaefer et al., 2015",https://doi.org/10.1016/j.fishres.2014.08.018
+Eastern Equatorial Pacific,Bigeye,Thunnus obesus,,3900000,,"Schaefer & Fuller, 2002",http://aquaticcommons.org/15249/1/11schaef.pdf
+Northwestern Atlantic,Bluefin,Thunnus thynnus,,10000,1277,"Galuardi & Lutcavage, 2012",https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0037829
+Northwestern Atlantic,Bluefin,Thunnus thynnus,,1775,362,"Galuardi & Lutcavage, 2012",https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0037829
