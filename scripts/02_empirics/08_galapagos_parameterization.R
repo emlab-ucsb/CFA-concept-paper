@@ -81,7 +81,9 @@ all_polygons <- rbind(ecu,
          geometry = geom)
 
 all_polygons %>% 
-  st_drop_geometry()
+  st_drop_geometry() %>% 
+  select(-geometry) %>% 
+  knitr::kable(format = "markdown")
 
 # Plot the final polygons
 ggplot(data = all_polygons) +
