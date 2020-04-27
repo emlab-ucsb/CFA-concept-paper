@@ -16,20 +16,6 @@ library(tidyverse)
 ## Load helper functions
 source(here("scripts", "00_helpers.R"))
 
-ucsb_project <- "emlab-gcp" # Name of our project
-
-# Establish a connection to the data
-effort_table <-
-  bq_table(project = ucsb_project,
-           dataset = "ocean_halos_v2",
-           table = "gridded_effort_by_gear_and_year_dist_to_mpa")
-
-# Download the data (and export it)
-effort_data <- bigrquery::bq_table_download(x = effort_table)
-write.csv(x = effort_data,
-          file = here("data", "gridded_effort_by_gear_and_year_dist_to_mpa.csv"),
-          row.names = F)
-
 # Modify the data for plotting purposes
 # We will calculate the AVERAGE fishing hours
 # for each 5 Km increments.
