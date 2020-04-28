@@ -1,5 +1,5 @@
 ############################################################################
-#####                   08_defining_galapagos_system                    ####
+#####                   01_defining_galapagos_system                    ####
 ############################################################################
 #
 # We need to provide a real-world example of how CFA's could work. The
@@ -95,7 +95,9 @@ all_polygons <- rbind(ecu_eez,
                                       fraction_as_reserve),
          fraction_as_reserve = ifelse(area == gal_area,                     # If polygon area is same as MPA, than this is the MPA, not the system
                                       NA,
-                                      fraction_as_reserve))
+                                      fraction_as_reserve)) %>% 
+  mutate(where = ifelse(id == "Galapagos MPA", "MPA", "Outside"))           # Define inside / outside
+
 all_polygons %>% 
   st_drop_geometry() %>% 
   knitr::kable(format = "markdown")
