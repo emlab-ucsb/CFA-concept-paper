@@ -62,8 +62,8 @@ WITH
       `vessels_i_want`)
     AND nnet_score > 0.5
     AND distance_from_shore_m > 1000
-    AND timestamp > TIMESTAMP("2015-12-31")
-    AND timestamp < TIMESTAMP("2020-01-01")
+    AND timestamp >= TIMESTAMP("2016-01-01")
+    AND timestamp <= TIMESTAMP("2019-12-31")
   GROUP BY
     year,
     lat,
@@ -89,4 +89,3 @@ SELECT
 FROM
   gridded_effort_by_gear_and_year
 LEFT JOIN `emlab-gcp.ocean_halos_v2.dist_to_lsmpa` USING(lat, lon)
-WHERE distance IS NOT NULL

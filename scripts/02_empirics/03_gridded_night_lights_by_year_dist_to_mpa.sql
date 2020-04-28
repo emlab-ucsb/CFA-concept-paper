@@ -47,5 +47,4 @@ LEFT JOIN
 USING
   (lat,
     lon)
-WHERE distance IS NOT NULL
 ORDER BY year, lat, lon
