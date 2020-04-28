@@ -192,9 +192,8 @@ output_table <- as.data.frame(stacked_rasters, xy = T) %>%
   drop_na(distance)
 
 # Export the data
-write.csv(output_table,
-          here("data", "gridded_distance_from_lsmpa_borders.csv"),
-          row.names = F)
+saveRDS(object = output_table,
+        file = here("data", "gridded_distance_from_lsmpa_borders.rds"))
 
 # Export a nicer version as a map
 coast <- rnaturalearth::ne_countries(scale = "small", returnclass = "sf")
