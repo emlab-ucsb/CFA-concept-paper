@@ -86,10 +86,10 @@ all_polygons <- rbind(ecu_eez,
                       HUD_95,
                       HUD_50) %>% 
   mutate(area = st_area(.),                                                 # Calculate the area of each polygon
-         id = fct_relevel(id, c("Galapagos MPA",                            # Reorder polygons for display
-                                "Ecuadorian EEZ",
+         id = fct_relevel(id, c("Ecuadorian EEZ",                            # Reorder polygons for display
                                 "95% HUD",
-                                "50% HUD")),
+                                "50% HUD",
+                                "Galapagos MPA")),
          fraction_as_reserve = gal_area / (area + gal_area),                # Calculate fraction of system that is resrve
          fraction_as_reserve = ifelse(area < gal_area,                      # If polygon area is less than mpa area, then ignore this as a system
                                       NA, 
@@ -105,13 +105,15 @@ all_polygons %>%
 ggplot(data = all_polygons) +
   geom_sf(aes(color = id), fill = "transparent") +
   theme_bw() +
-  scale_color_brewer(name = "Polygon", palette = "Set1", direction = -1)
+  scale_color_brewer(name = "Polygon",
+                     palette = "Set1",
+                     direction = -1)
 
 
 # Save polygons
-polygons_fn <- here("data", "galapagos_tuna_polygons.gpkg")           # Create file name
-file.remove(polygons_fn)                                              # Remove from disk to avoid appending
-st_write(obj = all_polygons,                                          # Save file to disk
+polygons_fn <- here("data", "galapagos_tuna_polygons.gpkg")                 # Create file name
+file.remove(polygons_fn)                                                    # Remove from disk to avoid appending
+st_write(obj = all_polygons,                                                # Save file to disk
          dsn = polygons_fn)
 
 
