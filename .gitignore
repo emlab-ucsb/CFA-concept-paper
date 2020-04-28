@@ -11,3 +11,4 @@ data/final_eez_dataset_SID_2016_2018.csv
 *.DS_Store
 data/gridded_effort_by_gear_and_year_dist_to_mpa.csv
 data/gridded_night_lights_by_year_dist_to_mpa.csv
+data/gridded_distance_from_lsmpa_borders.csv
