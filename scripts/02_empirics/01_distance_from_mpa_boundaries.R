@@ -135,7 +135,7 @@ wdpaid_raster <-
                 method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #2
-mapview::mapview(wdpaid_raster)
+# mapview::mapview(wdpaid_raster)
 
 # Now the one with IUCN categories
 iucn_cat_raster <- 
@@ -148,7 +148,7 @@ iucn_cat_raster <-
                 method = "ngb")                                # Reproject to longlat (whan we need for GFW)
 
 # Visual check #3
-mapview::mapview(iucn_cat_raster)
+# mapview::mapview(iucn_cat_raster)
 
 # Now, we'll create the distance to border raster.
 # This will be composed of two rasters:
@@ -158,7 +158,7 @@ outside_raster <- fasterize(no_take_lsmpa_boundaries, r)        # Rasterize the 
 distance_outside <- distance(outside_raster)                    # Calculate the distance to the boundaries
 
 # Visual check #4
-mapview::mapview(distance_outside)
+# mapview::mapview(distance_outside)
 
 # Now we repeat the process but calculate distance form inside (negative numbers)
 inside_raster <- is.na(outside_raster)                          # A raster with 1 and 0 for outside / inside
@@ -166,16 +166,16 @@ inside_raster[inside_raster == 0] <- NA                         # Replace 0 (ins
 distance_inside <- - distance(inside_raster)                    # Calculate distance to border (note the "-")
 
 # Visual check #5
-mapview::mapview(distance_inside)
+# mapview::mapview(distance_inside)
 
 # We'll now combine both
 distance_raster <- distance_outside
 distance_raster[distance_inside < 0] <- distance_inside[distance_inside < 0]
 distance_final <- projectRaster(distance_raster, crs = lonlat_crs, res = 0.1)
-distance_final[distance_final > 100 * 1e3 * 1.854] <- NA
+distance_final[distance_final > 200 * 1.854 * 1e3] <- NA
 
 # Visual check #6
-mapview::mapview(list(distance_final, no_take_lsmpa_boundaries[, "iucn_cat"]))
+# mapview::mapview(list(distance_final, no_take_lsmpa_boundaries[, "iucn_cat"]))
 
 ## TABULIZE ################################################################################
 # The next step is to make the rasters into a table that can be uploaded to GBQ
