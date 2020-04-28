@@ -1,3 +1,13 @@
+#######################################################################
+#####              get_gridded_night_lights_by_year                ####
+#######################################################################
+# 
+# This scripts downloads the gridded night light data from Google Big Query
+# and then exports it as an rds file.
+# 
+#######################################################################
+
+## Set up
 # Load packages
 library(here)
 library(connections)

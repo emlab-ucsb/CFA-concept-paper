@@ -1,3 +1,13 @@
+############################################################################
+#####               get_gridded_effort_by_gear_and_year                ####
+############################################################################
+# 
+# This scripts downloads the gridded effort data from Google Big Query
+# and then exports it as an rds file.
+# 
+############################################################################
+
+## Set up
 # Load packages
 library(here)
 library(connections)
