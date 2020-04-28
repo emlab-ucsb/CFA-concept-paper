@@ -31,7 +31,6 @@ library(tidyverse)
 source(here("scripts", "00_helpers.R"))
 
 ## Load data
-
 # Galapagos MPA
 gal <- st_read(here("data", "no_take_lsmpa_boundaries.gpkg")) %>% 
   filter(wdpaid == 11753) %>%                                               # Keep only Galapagos MPA
