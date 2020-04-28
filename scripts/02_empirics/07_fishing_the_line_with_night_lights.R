@@ -17,8 +17,7 @@ library(tidyverse)
 source(here("scripts", "00_helpers.R"))
 
 # Load data
-night_lights_data <- read.csv(here("data", "gridded_night_lights_by_year_dist_to_mpa.csv"),
-                              stringsAsFactors = F)
+night_lights_data <- read.csv(here("data", "gridded_night_lights_by_year_dist_to_mpa.rds"))
 
 
 increment <- 5

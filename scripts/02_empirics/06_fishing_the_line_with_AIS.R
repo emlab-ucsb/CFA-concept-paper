@@ -17,8 +17,7 @@ library(tidyverse)
 source(here("scripts", "00_helpers.R"))
 
 # Load data
-effort_data <- read.csv(here("data", "gridded_effort_by_gear_and_year_dist_to_mpa.csv"),
-                        stringsAsFactors = F)
+effort_data <- readRDS(here("data", "gridded_effort_by_gear_and_year_dist_to_mpa.rds"))
 
 # Modify the data for plotting purposes
 # We will calculate the AVERAGE fishing hours
