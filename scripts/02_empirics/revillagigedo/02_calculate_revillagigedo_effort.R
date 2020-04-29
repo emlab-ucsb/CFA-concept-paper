@@ -40,7 +40,7 @@ rev_effort <-
   filter(between(lon, sys_bbox[1] - 1, sys_bbox[3] + 1),
          between(lat, sys_bbox[2] - 1, sys_bbox[4] + 1)) %>% 
   group_by(lon, lat) %>%
-  summarize(fishing_hours = mean(fishing_hours, na.rm = T))
+  summarize(fishing_hours = mean(fishing_hours, na.rm = T) / 24)
 
 rev_lights <- night_data %>% 
   filter(between(lon, sys_bbox[1] - 1, sys_bbox[3] + 1),
@@ -85,8 +85,18 @@ data <- rev_system %>%
   mutate(fishing_hours = extracted_values$fishing_hours,
          radiance = extracted_values$radiance)
 
+effort_radiance_model <- filter(data, id %in% c("Mexican EEZ", "95% HUD")) %>% 
+  lm(fishing_hours ~ radiance, data = .) 
+
 data %>% 
-  st_drop_geometry() %>% 
+  mutate(fishing_hours_model = predict(effort_radiance_model, .))%>% 
+  ggplot(aes(x = radiance, y = fishing_hours_model, color = where, shape = id)) +
+  geom_point()
+
+
+data %>% 
+  st_drop_geometry() %>%
+  mutate(fishing_hours_corrected = predict(effort_radiance_model, .))%>% 
   gather(source, value, -c(id, area, fraction_as_reserve, where)) %>% 
   filter(!id == "Mexican EEZ") %>% 
   ggplot(aes(x = id, y = value, fill = where)) +
