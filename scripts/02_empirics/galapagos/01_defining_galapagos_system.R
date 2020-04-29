@@ -53,6 +53,14 @@ ecu_eez <- st_read(here("data", "clean_world_eez_v11.gpkg")) %>%
   st_difference(gal) %>%                                                    # Remove the galapagos polygon from it
   select(id)                                                                # Keep only id column
 
+# Galapagos EEZ
+gal_eez <- st_read(here("data", "clean_world_eez_v11.gpkg")) %>% 
+  filter(mrgid %in% c(8403)) %>%                                            # Keep only the Ecuadorian EEZ
+  st_transform("ESRI:54009") %>%                                            # Reproject to mollewiede
+  mutate(id = "Galapagos EEZ") %>%                                          # Rename for identification
+  st_difference(gal) %>%                                                    # Remove the galapagos polygon from it
+  select(id)                                                                # Keep only id column
+
 ## Movement data
 # Load data on tuna habitat utilization
 tuna_movement <- read.csv(here("data", "tuna_habitat_utilization.csv"),
@@ -81,11 +89,13 @@ HUD_50 <- gal_centroid %>%
 
 # Combine all polygons into one object
 all_polygons <- rbind(ecu_eez,
+                      gal_eez,
                       gal,
                       HUD_95,
                       HUD_50) %>% 
   mutate(area = st_area(.),                                                 # Calculate the area of each polygon
          id = fct_relevel(id, c("Ecuadorian EEZ",                            # Reorder polygons for display
+                                "Galapagos EEZ",
                                 "95% HUD",
                                 "50% HUD",
                                 "Galapagos MPA")),
