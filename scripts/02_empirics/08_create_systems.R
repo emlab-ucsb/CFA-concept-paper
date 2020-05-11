@@ -48,7 +48,7 @@ iso3_want <- c("ECU",
 systems <- tibble(wdpaid = wdpaid_want, iso3 = iso3_want) %>% 
   mutate(system = pmap(.l = list(wdpaid_want = wdpaid, iso3_want = iso3),
                        .f = get_system,
-                       mpa = mpas, eez = eez, hud95 = hr95, hud50 = hr50)) %>% 
+                       mpa = mpas, eez = eez, hud95 = hr_95, hud50 = hr_50)) %>% 
   unnest(system) %>% 
   st_as_sf() %>% 
   st_make_valid() %>% 
@@ -59,12 +59,13 @@ systems %>%
   select(iso3, id, fraction_as_reserve) %>% 
   filter(!id == "MPA") %>% 
   spread(id, fraction_as_reserve) %>% 
-  knitr::kable()
+  knitr::kable(digits= 2)
 
+file.remove(here("data", "mpa_systems.gpkg"))
 st_write(systems, here("data", "mpa_systems.gpkg"))
 
 
-
+get_system(mpa = mpas, wdpaid_want = 400011, eez = eez, iso3_want = "USA", hud95 = hr_95, hud50 = hr_50)
 
 
 

@@ -29,7 +29,8 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
   mpa <- mpa %>% 
     filter(wdpaid %in% wdpaid_want) %>% 
     mutate(id = "MPA") %>% 
-    select(id)
+    select(id) %>% 
+    mutate(area = st_area(.))
   
   # MPA characteristics
   mpa_centroid <- st_cast(mpa, "POLYGON") %>% 
@@ -38,8 +39,8 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
   
   ## CREATE POLYGONS FOR HABITAT UTILIZATION DENSITIES
   # If the MPA has multiple polygons, we have to split the area for each
-  area_95_split <- hr_95 / dim(mpa_centroid)[1]
-  area_50_split <- hr_50 / dim(mpa_centroid)[1]
+  area_95_split <- hud95
+  area_50_split <- hud50
   
   # Define radius
   hud_95_rad <- (sqrt(area_95_split / pi) * 1e3)                             # Radius of 95% utilization (m)
@@ -52,11 +53,12 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
     group_by(id) %>% 
     summarize(a = 1) %>% 
     ungroup() %>% 
-    select(id)                                                                # Keep id column only
+    select(id) %>%                                                             # Keep id column only
+    mutate(area = st_area(.))                                                               
   
   if(st_area(hud95_poly) > mpa_area){
     hud95_poly <- st_difference(hud95_poly, mpa) %>%                          # Remove the galapagos polygon from it
-      select(id)
+      select(id, area)
   }
   
   hud50_poly <- mpa_centroid %>% 
@@ -65,8 +67,8 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
     group_by(id) %>% 
     summarize(a = 1) %>% 
     ungroup() %>% 
-    select(id)                                                                # Keep id column only
-  
+    select(id) %>%                                                                 # Keep id column only
+    mutate(area = st_area(.))
   
   # range <- range %>% 
   #   mutate(id = "Range") %>% 
@@ -90,36 +92,36 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
       ungroup() %>% 
       st_difference(mpa) %>% 
       mutate(id = "EEZ") %>% 
-      select(id)
+      select(id) %>% 
+      mutate(area = st_area(.))
     
     all_polygons <- rbind(all_polygons, eez)
   }
   
   # If an MPA EEZ is provided, rbind it to the data
-  if(!is.null(mpa_eez)) {
-    mpa_eez <- mpa_eez %>% 
-      filter(iso3 %in% iso3_want) %>% 
-      group_by(iso3) %>% 
-      summarize(a = 1) %>% 
-      ungroup() %>% 
-      st_difference(mpa) %>% 
-      mutate(id = "MPA EEZ") %>% 
-      select(id)
-    
-    all_polygons <- rbind(all_polygons, mpa_eez)
-  }  
-  
+  # if(!is.null(mpa_eez)) {
+  #   mpa_eez <- mpa_eez %>% 
+  #     filter(iso3 %in% iso3_want) %>% 
+  #     group_by(iso3) %>% 
+  #     summarize(a = 1) %>% 
+  #     ungroup() %>% 
+  #     st_difference(mpa) %>% 
+  #     mutate(id = "MPA EEZ") %>% 
+  #     select(id)
+  #   
+  #   all_polygons <- rbind(all_polygons, mpa_eez)
+  # }  
+  # 
   ## COMBINE ALL POLYGONS
   all_polygons <- all_polygons %>% 
-    mutate(area = st_area(.),                                                 # Calculate the area of each polygon
-           id = fct_relevel(id, c("EEZ",                                      # Reorder polygons for display
+    mutate(id = fct_relevel(id, c("EEZ",                                      # Reorder polygons for display
                                   "MPA EEZ",
                                   "95% HUD",
                                   "50% HUD",
                                   "MPA")),
-           fraction_as_reserve = mpa_area / (area + mpa_area),                # Calculate fraction of system that is resrve
-           # fraction_as_reserve = ifelse(area < mpa_area,                      # If polygon area is less than mpa area, then ignore this as a system
-                                        # NA, 
+           fraction_as_reserve = units::drop_units(mpa_area / area),                # Calculate fraction of system that is resrve
+           # fraction_as_reserve = ifelse(mpa_area > area,                      # If polygon area is less than mpa area, then ignore this as a system
+                                        # NA,
                                         # fraction_as_reserve),
            fraction_as_reserve = ifelse(area == mpa_area,                     # If polygon area is same as MPA, than this is the MPA, not the system
                                         NA,
