@@ -27,7 +27,7 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
   # browser()
   # Housekeeping
   mpa <- mpa %>% 
-    filter(wdpaid %in% wdpaid_want) %>% 
+    filter(wdpaid %in% wdpaid_want) %>%
     mutate(id = "MPA") %>% 
     select(id) %>% 
     mutate(area = st_area(.))
@@ -38,13 +38,9 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
   mpa_area <- st_area(mpa)
   
   ## CREATE POLYGONS FOR HABITAT UTILIZATION DENSITIES
-  # If the MPA has multiple polygons, we have to split the area for each
-  area_95_split <- hud95
-  area_50_split <- hud50
-  
   # Define radius
-  hud_95_rad <- (sqrt(area_95_split / pi) * 1e3)                             # Radius of 95% utilization (m)
-  hud_50_rad <- (sqrt(area_50_split / pi) * 1e3)                             # Radius of 50% utilizatio (m)
+  hud_95_rad <- (sqrt(hud95 / pi) * 1e3)                             # Radius of 95% utilization (m)
+  hud_50_rad <- (sqrt(hud50 / pi) * 1e3)                             # Radius of 50% utilizatio (m)
   
   # Create "system" circle around the centroid
   hud95_poly <- mpa_centroid %>% 
@@ -115,7 +111,7 @@ get_system <- function(mpa, wdpaid_want, eez = NULL, iso3_want, mpa_eez = NULL, 
   ## COMBINE ALL POLYGONS
   all_polygons <- all_polygons %>% 
     mutate(id = fct_relevel(id, c("EEZ",                                      # Reorder polygons for display
-                                  "MPA EEZ",
+                                  # "MPA EEZ",
                                   "95% HUD",
                                   "50% HUD",
                                   "MPA")),
