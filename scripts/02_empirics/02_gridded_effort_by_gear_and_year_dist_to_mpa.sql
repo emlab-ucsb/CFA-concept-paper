@@ -25,7 +25,8 @@ WITH
     `world-fishing-827.gfw_research.vi_ssvid_v20190430`  
   WHERE
     best.best_vessel_class IN ("tuna_purse_seines",
-      "drifting_longlines")
+      "drifting_longlines",
+      "trawlers")
     AND on_fishing_list_best
     AND CAST(ssvid AS int64) NOT IN (SELECT ssvid FROM `world-fishing-827.gfw_research.bad_mmsi` CROSS JOIN UNNEST(ssvid) AS ssvid)
     AND activity.overlap_hours_multinames = 0
