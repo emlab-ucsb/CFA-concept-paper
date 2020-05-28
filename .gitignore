@@ -2,7 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-
 data/World_EEZ_v10_20180221/*
 data/final_eez_dataset_SID_2016_2018.csv
 *.httr-oauth
