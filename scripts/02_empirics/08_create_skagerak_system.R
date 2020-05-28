@@ -1,10 +1,12 @@
 
+library(startR)
 library(here)
 library(sf)
 library(tidyverse)
 
+# Load helper functions
+source(here("scripts", "00_helpers.R"))
 source(here("scripts", "02_empirics", "get_system.R"))
-
 
 ## Load data
 # MPA
@@ -29,24 +31,30 @@ eez <- st_read(here("data", "clean_world_eez_v11.gpkg"),
   select(id, area)
 
 ## Movement data
-# Cod movement (km converted to m) from Table 2 in Hobson et al.: Movements of North Sea cod
-cod_edm <- mean(c(204, 317, 76, 162, 101, 213, 105, 239, 220, 229)) * 1e3
-cod_res <- mean(c(6, 36, 17, 1, 83, 41, 6, 5, 56, 9, 20, 42, 60, 7)) * 1e3
-cod_elm <- mean(c(21.9, 55.9, 14.8, 20.7, 18.6, 15.9, 11.7, 28.7,6.9, 59.2)) * 1e3
-cod_mean <- 46.12 * 1e3
-
+# Cod movement (km) from Table 2 in Hobson et al.: Movements of North Sea cod
 cod_movement <- read.csv(here("data", "cod_movement_data.csv")) %>% 
-  mutate(movement = ((n_oc_edm * duration_edm * dist_edm) +
-           (n_oc_res * duration_res * dist_res) +
-           (n_oc_elm * duration_elm * dist_elm)) / time_at_liberty)
+  mutate(days_edm = n_oc_edm * duration_edm,
+         days_res = n_oc_res * duration_res,
+         days_elm = n_oc_elm * duration_elm)
 
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
+cod_movement_summary <- cod_movement %>% 
+  select(contains("days")) %>% 
+  gather(variable, value) %>% 
+  group_by(variable) %>% 
+  summarize(value = sum(value, na.rm = T)) %>% 
+  ungroup()
+
+ggplot(data = cod_movement_summary, aes(x = variable, y = value / sum(value))) +
+  geom_col(fill = "steelblue", color = "black") +
+  plot_theme() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Type of movement", y = "Days spent as portion of total")
+
+cod_edm <- sum(cod_movement$days_edm * cod_movement$dist_edm) / sum(cod_movement$days_edm) * 1e3
+cod_res <- sum(cod_movement$days_res * cod_movement$dist_res) / sum(cod_movement$days_res) * 1e3
+cod_elm <- sum(cod_movement$days_elm * cod_movement$dist_elm) / sum(cod_movement$days_elm) * 1e3
+cod_mean <- sum(cod_movement_summary$value * c(cod_edm, cod_elm, cod_res)) / sum(cod_movement_summary$value)
+
 # MPA characteristics
 mpa_centroid <- st_centroid(mpa)
 mpa_area <- st_area(mpa)
@@ -54,29 +62,30 @@ mpa_area <- st_area(mpa)
 # Create "system" circle around the centroid
 EDM_poly <- mpa_centroid %>% 
   st_buffer(dist = cod_edm) %>%                                          # For Extended Direct Movement
-  mutate(id = "EDM") %>%                                                 # Reame for identification                                             # Keep id column only
+  mutate(id = "EDM") %>%                                                 # Reame for identification                               
   mutate(area = st_area(.)) %>%                                          # Calculate area
-  # st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
+  st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
   select(id, area)
 
-RES_poly <- mpa_centroid %>% 
+RES_poly <- mpa_centroid %>%
   st_buffer(dist = cod_res) %>%                                          # For Residence
-  mutate(id = "RES") %>%                                                 # Reame for identification                                             # Keep id column only
+  mutate(id = "RES") %>%                                                 # Reame for identification                                
   mutate(area = st_area(.)) %>%                                          # Calculate area
-  # st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
+  st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
   select(id, area)
 
 ELM_poly <- mpa_centroid %>% 
   st_buffer(dist = cod_elm) %>%                                          # For Extended Localized Movement
-  mutate(id = "ELM") %>%                                                 # Reame for identification                                             # Keep id column only
+  mutate(id = "ELM") %>%                                                 # Reame for identification                               
   mutate(area = st_area(.)) %>%                                          # Calculate area
-  # st_difference(mpa) %>%                                               # Remove the MPA from it (to avoid double counting effort)
+  st_difference(mpa) %>%                                               # Remove the MPA from it (to avoid double counting effort)
   select(id, area)
 
 MEAN_poly <- mpa_centroid %>% 
   st_buffer(dist = cod_mean) %>%                                          # For Extended Localized Movement
-  mutate(id = "Mean") %>%                                                 # Reame for identification                                             # Keep id column only
-  mutate(area = st_area(.)) %>%                                          # Calculate area
+  mutate(id = "Mean") %>%                                                 # Reame for identification                                
+  mutate(area = st_area(.)) %>%                                           # Calculate area
+  st_difference(mpa) %>%
   select(id, area)
 
 # Combine all polygons into one object
@@ -94,14 +103,15 @@ all_polygons <- all_polygons %>%
                                 "EDM",
                                 "RES",
                                 "ELM",
+                                "Mean",
                                 "MPA")),
-         fraction_as_reserve = units::drop_units(mpa_area / area),                # Calculate fraction of system that is resrve
+         fraction_as_reserve = units::drop_units(mpa_area / area),          # Calculate fraction of system that is resrve
          fraction_as_reserve = ifelse(area == mpa_area,                     # If polygon area is same as MPA, than this is the MPA, not the system
                                       NA,
                                       fraction_as_reserve),
          where = ifelse(id == "MPA",
                         "MPA",
-                        "Outside")) %>%                                          # Define inside / outside
+                        "Outside")) %>%                                     # Define inside / outside
   st_transform(4326) %>% 
   select(id, area, fraction_as_reserve, where)
 
@@ -112,25 +122,14 @@ all_polygons %>%
   select(id, fraction_as_reserve) %>% 
   filter(!id == "MPA") %>% 
   spread(id, fraction_as_reserve) %>% 
-  knitr::kable(digits= 2)
+  knitr::kable(digits = 2)
 
 ggplot(all_polygons) +
   geom_sf() +
-  facet_wrap(~id)
+  facet_wrap(~id) +
+  ggtheme_plot()
 
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-###########################
-file.remove(here("data", "mpa_systems.gpkg"))
-st_write(systems, here("data", "mpa_systems.gpkg"))
+file.remove(here("data", "Skagerak.gpkg"))
+st_write(all_polygons, here("data", "Skagerak.gpkg"))
+
+
