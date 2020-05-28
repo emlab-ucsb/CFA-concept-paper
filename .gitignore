@@ -14,3 +14,4 @@ data/gridded_night_lights_by_year_dist_to_mpa.csv
 data/gridded_distance_from_lsmpa_borders.csv
 *.DS_Store
 */.DS_Store
+data/ .DS_Store
