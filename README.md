@@ -1,19 +1,17 @@
-# Repository
+# Ocean Halos
 
-Repository for the Ocean-Halos concept paper
 
-## Repository structure
+## Repository structure 
 
 ```
 -- data
    |__clean_world_eez_v11.gpkg
-   |__galapagos_tuna_polygons.gpkg
-   |__gridded_distance_from_lsmpa_borders.csv
-   |__gridded_effort_by_gear_and_year_dist_to_mpa.rds
-   |__gridded_night_lights_by_year_dist_to_mpa.rds
+   |__cod_movement_data.csv
+   |__gridded_distance_from_lsmpa_borders.rds
    |__min_distances_by_eez.csv
-   |__no_take_lsmpa_boundaries.gpkg
    |__SID_country_list.csv
+   |__skagerak_trawling.rds
+   |__skagerak.gpkg
    |__tuna_habitat_utilization.csv
    |__WDPA_Nov2019_Marine_Only
    |__WDPA_Nov2019_No_Terrestrial
@@ -38,6 +36,9 @@ Repository for the Ocean-Halos concept paper
    |__01_simulations
    |__02_empirics
    |__old
+-- test.R
 ```
 
----------
+--------- 
+
+<a href="https://orcid.org/0000-0003-1245-589X" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0003-1245-589X</a>
