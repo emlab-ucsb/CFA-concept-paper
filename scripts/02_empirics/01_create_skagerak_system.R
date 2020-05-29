@@ -129,7 +129,7 @@ ggplot(all_polygons) +
   facet_wrap(~id) +
   ggtheme_plot()
 
-file.remove(here("data", "Skagerak.gpkg"))
-st_write(all_polygons, here("data", "Skagerak.gpkg"))
+file.remove(here("data", "skagerak.gpkg"))
+st_write(all_polygons, here("data", "skagerak.gpkg"))
 
 
