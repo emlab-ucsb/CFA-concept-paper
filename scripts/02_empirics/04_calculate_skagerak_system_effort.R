@@ -35,20 +35,24 @@ dnk <- ne_countries(country = c("Denmark", "Norway", "Sweden"),
                     scale = "large")
 
 ## Define boundaries
-d <- 0.5
+d <- 0.1
 bbox <- st_bbox(system) + c(-d, -d, d, d)
 
 # Filter and clean
 effort <- 
   effort_data %>% 
-  filter(year == 2019,
+  filter(#year == 2019#,
          between(lon, bbox[1], bbox[3]),
-         between(lat, bbox[2], bbox[4])) %>% 
-  group_by(lon, lat) %>% 
-  summarize(fishing_days = sum(fishing_hours, na.rm = T) / 24)
+         between(lat, bbox[2], bbox[4])
+         ) %>%
+  group_by(lon, lat, year) %>%
+  summarize(fishing_days = sum(fishing_hours, na.rm = T) / 24) %>% 
+  spread(year, fishing_days, fill = NA)
 
 effort_raster <- 
   rasterFromXYZ(effort, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs ")
+
+plot(effort_raster)
 
 extracted_values <- raster::extract(effort_raster, system,
                                     method = "simple",
@@ -59,55 +63,63 @@ extracted_values <- raster::extract(effort_raster, system,
 data <- extracted_values %>% 
   st_as_sf() %>% 
   st_drop_geometry() %>% 
+  select(-area) %>% 
+  gather(year, fishing_days, -id) %>%  
   mutate(id = fct_reorder(id, fishing_days, .desc = T))
 
 
 ## FIGURES
 map <- effort %>%
+  gather(year, fishing_days, -c(lon, lat)) %>% 
+  group_by(lon, lat) %>% 
+  summarize(fishing_days = mean(fishing_days, na.rm = T)) %>% 
+  ungroup() %>% 
   ggplot() +
   geom_raster(aes(x = lon, y = lat, fill = fishing_days)) +
-  geom_sf(data = system, aes(color = id), fill = "transparent") +
   geom_sf(data = dnk) +
-  geom_sf(data = mpa) +
+  geom_sf(data = system, aes(color = id), fill = "transparent") +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1", direction = -1) +
   plot_theme() +
-  labs(title = "Trawiling days (2019)",
+  labs(title = "Mean trawiling effort (2012 - 2019)",
        subtitle = "Data are on a 0.01 degree grid") +
   coord_sf(expand = FALSE,
            xlim = c(bbox[1], bbox[3]),
-           ylim = c(bbox[2], bbox[4]))
+           ylim = c(bbox[2], bbox[4])) +
+  guides(fill = guide_colorbar(title = "Days",
+                               frame.colour = "black",
+                               ticks.colour = "black"),
+         color = guide_legend(title = "Polygon"))
 
 effort_in_poly <- ggplot(data, aes(x = id, y = fishing_days)) +
-  geom_col(fill = "steelblue", color = "black") +
-  labs("Total trawling days in each polygon",
+  stat_summary(geom = "col", fun = mean, fill = "steelblue", color = "black") +
+  stat_summary(geom = "errorbar", fun.data = mean_sdl, width = 0.1) +
+  labs(title = "Mean trawling days in each polygon (2012 - 2019)",
        x = "Polygon",
        y = "Trawling days") +
   plot_theme()
 
-percent_per_system <- data %>% 
-  select(id, fishing_days) %>% 
-  spread(id, fishing_days) %>% 
-  gather(id, fishing_days, -c(MPA)) %>% 
-  mutate(percent = (MPA / (fishing_days + MPA)),
-         id = fct_reorder(id, percent, .desc = T)) %>% 
-  ggplot(aes(x = id, y = percent)) +
-  geom_col(fill = "steelblue", color = "black") +
-  scale_y_continuous(labels = scales::percent) +
-  labs("Percent of fishing inside MPA for each deffinition of 'System'",
-       x = "Deffinition of system",
-       y = "Percent activity inside MPA") +
-  plot_theme()
+plot <- plot_grid(map, effort_in_poly, ncol = 2)
+
+data %>% 
+  group_by(id) %>% 
+  summarise(fishing_days = mean(fishing_days, na.rm = T)) %>% 
+  ungroup()
+
+lazy_ggsave(plot = plot, filename = "skagerak_system_effort")
 
 
-plot_grid(map, plot_grid(effort_in_poly, percent_per_system, ncol = 1), ncol = 2)
+cpue <- data %>% 
+  group_by(year) %>% 
+  summarize(effort = sum(fishing_days)) %>% 
+  mutate(landings = c(landings, NA))
 
+lm(landings ~ effort, data = cpue) %>% 
+  summary()
 
-
-
-
-
-
+ggplot(cpue, aes(x = effort, y = landings)) +
+  geom_smooth(method = "lm") +
+  geom_point()
 
 
 

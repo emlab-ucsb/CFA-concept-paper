@@ -61,10 +61,9 @@ WITH
       `vessels_i_want`)
     AND nnet_score > 0.5
     AND distance_from_shore_m > 1000
-    AND timestamp >= TIMESTAMP("2016-01-01")
     AND timestamp <= TIMESTAMP("2019-12-31")
-    AND lat between 50 AND 65
-    AND lon between 0 AND 20
+    AND lat between 53 AND 62
+    AND lon between 4 AND 15
   GROUP BY
     year,
     lat,

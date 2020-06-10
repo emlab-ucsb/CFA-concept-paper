@@ -6,7 +6,6 @@ library(tidyverse)
 
 # Load helper functions
 source(here("scripts", "00_helpers.R"))
-source(here("scripts", "02_empirics", "get_system.R"))
 
 ## Load data
 # MPA
@@ -21,14 +20,16 @@ mpa <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"),
          area = st_area(.)) %>% 
   select(id, area)
 
-# EEZ
-eez <- st_read(here("data", "clean_world_eez_v11.gpkg"),
-               stringsAsFactors = F) %>% 
-  filter(iso3 == "DNK") %>% 
-  rename(geometry = geom) %>% 
-  mutate(id = "EEZ",
+# Cod stock boundary
+cod <- st_read(dsn = "raw_data", layer = "WGBFAS-CODKAT-1971-2012-CHING", stringsAsFactors = F) %>% 
+  rmapshaper::ms_simplify() %>% 
+  st_transform(54009) %>% 
+  st_difference(mpa) %>% 
+  mutate(id = "COD",
          area = st_area(.)) %>% 
   select(id, area)
+
+s <- units::drop_units(mpa$area / (cod$area + mpa$area))
 
 ## Movement data
 # Cod movement (km) from Table 2 in Hobson et al.: Movements of North Sea cod
@@ -55,81 +56,38 @@ cod_res <- sum(cod_movement$days_res * cod_movement$dist_res) / sum(cod_movement
 cod_elm <- sum(cod_movement$days_elm * cod_movement$dist_elm) / sum(cod_movement$days_elm) * 1e3
 cod_mean <- sum(cod_movement_summary$value * c(cod_edm, cod_elm, cod_res)) / sum(cod_movement_summary$value)
 
-# MPA characteristics
-mpa_centroid <- st_centroid(mpa)
-mpa_area <- st_area(mpa)
-
-# Create "system" circle around the centroid
-EDM_poly <- mpa_centroid %>% 
-  st_buffer(dist = cod_edm) %>%                                          # For Extended Direct Movement
-  mutate(id = "EDM") %>%                                                 # Reame for identification                               
-  mutate(area = st_area(.)) %>%                                          # Calculate area
-  st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
+# Calculte buffer around mpa
+mpa_buffer <- st_buffer(mpa, cod_mean)  %>% 
+  mutate(id = "MPA buffer",
+         area = st_area(.)) %>% 
   select(id, area)
+  
+d_11 <- units::drop_units(mpa$area / mpa_buffer$area)
+d_12 <- 1 - d_11
+d_21 <- s
+d_22 <- 1 - s
 
-RES_poly <- mpa_centroid %>%
-  st_buffer(dist = cod_res) %>%                                          # For Residence
-  mutate(id = "RES") %>%                                                 # Reame for identification                                
-  mutate(area = st_area(.)) %>%                                          # Calculate area
-  st_difference(mpa) %>%                                                 # Remove the MPA from it (to avoid double counting effort)
-  select(id, area)
-
-ELM_poly <- mpa_centroid %>% 
-  st_buffer(dist = cod_elm) %>%                                          # For Extended Localized Movement
-  mutate(id = "ELM") %>%                                                 # Reame for identification                               
-  mutate(area = st_area(.)) %>%                                          # Calculate area
-  st_difference(mpa) %>%                                               # Remove the MPA from it (to avoid double counting effort)
-  select(id, area)
-
-MEAN_poly <- mpa_centroid %>% 
-  st_buffer(dist = cod_mean) %>%                                          # For Extended Localized Movement
-  mutate(id = "Mean") %>%                                                 # Reame for identification                                
-  mutate(area = st_area(.)) %>%                                           # Calculate area
-  st_difference(mpa) %>%
-  select(id, area)
+d <- matrix(c(d_11, d_12, d_21, d_22), ncol = 2, byrow = T)
 
 # Combine all polygons into one object
-all_polygons <- rbind(eez,
-                      EDM_poly,
-                      RES_poly,
-                      ELM_poly,
-                      MEAN_poly,
-                      mpa)
+all_polygons <- rbind(cod,
+                      mpa) %>% 
+  st_transform(4326)
 
 plot(all_polygons[,1])
-
-all_polygons <- all_polygons %>% 
-  mutate(id = fct_relevel(id, c("EEZ",                                      # Reorder polygons for display
-                                "EDM",
-                                "RES",
-                                "ELM",
-                                "Mean",
-                                "MPA")),
-         fraction_as_reserve = units::drop_units(mpa_area / area),          # Calculate fraction of system that is resrve
-         fraction_as_reserve = ifelse(area == mpa_area,                     # If polygon area is same as MPA, than this is the MPA, not the system
-                                      NA,
-                                      fraction_as_reserve),
-         where = ifelse(id == "MPA",
-                        "MPA",
-                        "Outside")) %>%                                     # Define inside / outside
-  st_transform(4326) %>% 
-  select(id, area, fraction_as_reserve, where)
-
-plot(all_polygons[,1], col = "transparent")
-
-all_polygons %>% 
-  st_drop_geometry() %>% 
-  select(id, fraction_as_reserve) %>% 
-  filter(!id == "MPA") %>% 
-  spread(id, fraction_as_reserve) %>% 
-  knitr::kable(digits = 2)
 
 ggplot(all_polygons) +
   geom_sf() +
   facet_wrap(~id) +
   ggtheme_plot()
 
+## Save data
+# Skagerak system
 file.remove(here("data", "skagerak.gpkg"))
 st_write(all_polygons, here("data", "skagerak.gpkg"))
 
+## Portion of system as reserve
+saveRDS(s, file = here("data", "skagerak_s.rds"))
 
+## Save dispersal matrix
+saveRDS(d, file = here("data", "skagerak_d.rds"))
