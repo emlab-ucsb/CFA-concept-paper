@@ -19,15 +19,15 @@
 ## Bio
 r <- 0.52                 # *Growth rate http://fishbase.org/summary/Gadus-morhua.html
 K <- 2.7e6                # *Carrying capacity (tons) <<<<<<-------------- FIX THIS< IT IS MADE UP FOR NOW !!!!!!!!!!!!!!!
-X0 <- 1485912	            # *Initial biomass (tons) SSB from SA: http://standardgraphs.ices.dk/ViewSourceData.aspx?key=9841
+X0 <- K	            # *Initial biomass (tons) SSB from SA: http://standardgraphs.ices.dk/ViewSourceData.aspx?key=9841
 s <- readRDS(here("data", "skagerak_s.rds"))                 # The reserve covers 40% of the system skagerak systems
 D <- readRDS(here("data", "skagerak_d.rds"))
 
 ## Econ
 p <- 7000                 # *Price (USD / ton) About 7 usd per Kg based on: https://issuu.com/globefish/docs/epr__may_2020
-q <- 0.014250             # *Catchability (approximated from landings and effort data 2012 - 2018)
-c <- 3000                 # *Cost coefficient (USD / unit of effort)
-beta <- 1.2               # *Cost exponent (From EIDE et al., 2003, MRE
+q <- exp(-16.95)          # *Catchability (From EIDE et al., 2003, MRE)
+c <- 3000 * 1e3           # *Cost coefficient (USD / unit of effort)
+beta <- 1.2               # *Cost exponent (From EIDE et al., 2003, MRE)
 
 ## Management
 alpha <- 5000             # Marginal cost of enforcement

@@ -14,7 +14,7 @@ mpa <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"),
                 stringsAsFactors = FALSE,
                 as_tibble = TRUE) %>% 
   janitor::clean_names() %>% 
-  filter(wdpaid  == 555522470) %>% 
+  filter(wdpaid %in% 555522470) %>% 
   st_transform(54009) %>% 
   mutate(id = "MPA",
          area = st_area(.)) %>% 
@@ -28,6 +28,33 @@ cod <- st_read(dsn = "raw_data", layer = "WGBFAS-CODKAT-1971-2012-CHING", string
   mutate(id = "COD",
          area = st_area(.)) %>% 
   select(id, area)
+
+bbox <- st_bbox(cod)
+
+# marmap
+library(marmap)
+lon <- bbox[c(1, 3)]
+lat <- bbox[c(2, 4)]
+bathy <- getNOAA.bathy(lon1 = min(lon), lon2 = max(lon), 
+                       lat1 = min(lat), lat2 = max(lat), resolution = 4) %>% 
+  marmap::as.raster()
+
+plot(bathy <= 0)
+
+bathy_mask <- bathy * 0
+bathy_mask[bathy < -0 & bathy > -500] <- NA
+plot(bathy_mask)
+
+a <- rasterToPolygons(bathy_mask, dissolve = T) %>%
+  st_as_sf() %>% 
+  st_transform(54009)
+
+plot(a)
+
+b <- st_difference(cod, a) %>% 
+  select(id, area)
+plot(b)
+
 
 s <- units::drop_units(mpa$area / (cod$area + mpa$area))
 
