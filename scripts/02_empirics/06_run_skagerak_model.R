@@ -51,6 +51,8 @@ for (L in L_range){
   
 }
 
+(best_results$E_i_vec / best_results$E_f_vec)[1]
+
 ### ------------------------------------------------------
 # Plot 1: L vs B for default parameters (chi is fixed)
 ### ------------------------------------------------------

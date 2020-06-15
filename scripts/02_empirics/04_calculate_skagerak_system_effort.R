@@ -63,9 +63,10 @@ extracted_values <- raster::extract(effort_raster, system,
 data <- extracted_values %>% 
   st_as_sf() %>% 
   st_drop_geometry() %>% 
-  select(-area) %>% 
-  gather(year, fishing_days, -id) %>%  
-  mutate(id = fct_reorder(id, fishing_days, .desc = T))
+  # select(-area) %>% 
+  gather(year, fishing_days, -c(id, area)) %>%  
+  mutate(id = fct_reorder(id, fishing_days, .desc = T),
+         fishing_intensity = fishing_days / (area / 1e6))
 
 
 ## FIGURES
@@ -91,12 +92,12 @@ map <- effort %>%
                                ticks.colour = "black"),
          color = guide_legend(title = "Polygon"))
 
-effort_in_poly <- ggplot(data, aes(x = id, y = fishing_days)) +
+effort_in_poly <- ggplot(data, aes(x = id, y = fishing_intensity)) +
   stat_summary(geom = "col", fun = mean, fill = "steelblue", color = "black") +
   stat_summary(geom = "errorbar", fun.data = mean_sdl, width = 0.1) +
-  labs(title = "Mean trawling days in each polygon (2012 - 2019)",
+  labs(title = "Mean trawling intensity in each polygon (2012 - 2019)",
        x = "Polygon",
-       y = "Trawling days") +
+       y = bquote("Trawling days"~km^-1)) +
   plot_theme()
 
 plot <- plot_grid(map, effort_in_poly, ncol = 2)
