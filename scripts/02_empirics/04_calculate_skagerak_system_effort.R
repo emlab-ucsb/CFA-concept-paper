@@ -68,7 +68,6 @@ data <- extracted_values %>%
   mutate(id = fct_reorder(id, fishing_days, .desc = T),
          fishing_intensity = fishing_days / (area / 1e6))
 
-
 ## FIGURES
 map <- effort %>%
   gather(year, fishing_days, -c(lon, lat)) %>% 
@@ -108,19 +107,6 @@ data %>%
   ungroup()
 
 lazy_ggsave(plot = plot, filename = "skagerak_system_effort")
-
-
-cpue <- data %>% 
-  group_by(year) %>% 
-  summarize(effort = sum(fishing_days)) %>% 
-  mutate(landings = c(landings, NA))
-
-lm(landings ~ effort, data = cpue) %>% 
-  summary()
-
-ggplot(cpue, aes(x = effort, y = landings)) +
-  geom_smooth(method = "lm") +
-  geom_point()
 
 
 

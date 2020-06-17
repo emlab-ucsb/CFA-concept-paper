@@ -22,7 +22,7 @@
 r <- 0.52                 # *Growth rate http://fishbase.org/summary/Gadus-morhua.html
 K <- 2.7e6                # *Carrying capacity (tons) <<<<<<-------------- FIX THIS< IT IS MADE UP FOR NOW !!!!!!!!!!!!!!!
 X0 <- 0.1*K	            # *Initial biomass (tons) SSB from SA: http://standardgraphs.ices.dk/ViewSourceData.aspx?key=9841
-s <- 0.15 # readRDS(here::here("data", "skagerak_s.rds"))                 # The reserve covers 40% of the system skagerak systems
+s <- readRDS(here::here("data", "skagerak_s.rds"))                 # The reserve covers 40% of the system skagerak systems
 D <- readRDS(here::here("data", "skagerak_d.rds"))
 
 ## Econ

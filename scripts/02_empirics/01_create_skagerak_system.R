@@ -1,6 +1,7 @@
 
 library(startR)
 library(here)
+library(raster)
 library(sf)
 library(tidyverse)
 
@@ -29,35 +30,6 @@ cod <- st_read(dsn = "raw_data", layer = "WGBFAS-CODKAT-1971-2012-CHING", string
          area = st_area(.)) %>% 
   select(id, area)
 
-bbox <- st_bbox(cod)
-
-# marmap
-library(marmap)
-lon <- bbox[c(1, 3)]
-lat <- bbox[c(2, 4)]
-bathy <- getNOAA.bathy(lon1 = min(lon), lon2 = max(lon), 
-                       lat1 = min(lat), lat2 = max(lat), resolution = 4) %>% 
-  marmap::as.raster()
-
-plot(bathy <= 0)
-
-bathy_mask <- bathy * 0
-bathy_mask[bathy < -0 & bathy > -500] <- NA
-plot(bathy_mask)
-
-a <- rasterToPolygons(bathy_mask, dissolve = T) %>%
-  st_as_sf() %>% 
-  st_transform(54009)
-
-plot(a)
-
-b <- st_difference(cod, a) %>% 
-  select(id, area)
-plot(b)
-
-
-s <- units::drop_units(mpa$area / (cod$area + mpa$area))
-
 ## Movement data
 # Cod movement (km) from Table 2 in Hobson et al.: Movements of North Sea cod
 cod_movement <- read.csv(here("data", "cod_movement_data.csv")) %>% 
@@ -82,6 +54,27 @@ cod_edm <- sum(cod_movement$days_edm * cod_movement$dist_edm) / sum(cod_movement
 cod_res <- sum(cod_movement$days_res * cod_movement$dist_res) / sum(cod_movement$days_res) * 1e3
 cod_elm <- sum(cod_movement$days_elm * cod_movement$dist_elm) / sum(cod_movement$days_elm) * 1e3
 cod_mean <- sum(cod_movement_summary$value * c(cod_edm, cod_elm, cod_res)) / sum(cod_movement_summary$value)
+
+# What portion of the system is within an MPA?
+
+trawl_effort <- 
+  readRDS(here("data", "skagerak_trawling.rds")) %>% 
+  group_by(lon, lat) %>%
+  summarize(days = sum(fishing_hours, na.rm = T) / 24) %>%
+  rasterFromXYZ(crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs ") %>% 
+  mask(as_Spatial(cod %>% st_transform(4326)))
+
+fishing_area <- ((trawl_effort > 1) * area(trawl_effort)) %>% 
+  values() %>% 
+  sum(na.rm = T) * 1e6
+
+mpa_area <- mpa %>% 
+  st_area() %>% 
+  units::drop_units()
+
+s <- mpa_area / fishing_area 
+
+# What is the movement of the fish, relative to our system
 
 # Calculte buffer around mpa
 mpa_buffer <- st_buffer(mpa, cod_mean)  %>% 
