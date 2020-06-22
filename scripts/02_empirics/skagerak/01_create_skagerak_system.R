@@ -22,7 +22,8 @@ mpa <- st_read(here::here("data", "WDPA_Nov2019_No_Terrestrial/"),
   select(id, area)
 
 # Cod stock boundary
-cod <- st_read(dsn = "raw_data", layer = "WGBFAS-CODKAT-1971-2012-CHING", stringsAsFactors = F) %>% 
+cod <- st_read(dsn = "~/Google Drive File Stream/Shared drives/emlab/data/ram-boundaries/ramldb_boundaries/",
+               layer = "WGBFAS-CODKAT-1971-2012-CHING", stringsAsFactors = F) %>% 
   rmapshaper::ms_simplify() %>% 
   st_transform(54009) %>% 
   st_difference(mpa) %>% 
@@ -68,6 +69,10 @@ fishing_area <- ((trawl_effort > 1) * area(trawl_effort)) %>%
   values() %>% 
   sum(na.rm = T) * 1e6
 
+cod_area <- cod %>% 
+  st_area() %>% 
+  units::drop_units()
+
 mpa_area <- mpa %>% 
   st_area() %>% 
   units::drop_units()
@@ -84,8 +89,8 @@ mpa_buffer <- st_buffer(mpa, cod_mean)  %>%
   
 d_11 <- units::drop_units(mpa$area / mpa_buffer$area)
 d_12 <- 1 - d_11
-d_21 <- s
-d_22 <- 1 - s
+d_21 <- (mpa_area / cod_area)
+d_22 <- 1 - d_21
 
 d <- matrix(c(d_11, d_12, d_21, d_22), ncol = 2, byrow = T)
 
