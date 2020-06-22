@@ -34,4 +34,4 @@ data <- tbl(ocean_halos_v2, table_name) %>%
 
 # Save the data
 saveRDS(object = data,
-        file = here("data", paste0(table_name, ".rds")))
+        file = here("raw_data", paste0(table_name, ".rds")))
