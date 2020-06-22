@@ -8,7 +8,7 @@ library(tidyverse)
 # Load helper functions
 source(here("scripts", "00_helpers.R"))
 
-world <- ne_countries(returnclass = "sf", scale = small)
+world <- ne_countries(returnclass = "sf", scale = "small")
 
 # Map of PNA with PINA and PNMS
 
@@ -74,8 +74,6 @@ pna_map <- ggplot() +
                                frame.colour = "black",
                                ticks.colour = "black"),
          color = FALSE)
-
-pna_map
 
 
 # Map of Mexico with Natividad and SAM
