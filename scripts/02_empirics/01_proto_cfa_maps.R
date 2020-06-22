@@ -8,7 +8,7 @@ library(tidyverse)
 # Load helper functions
 source(here("scripts", "00_helpers.R"))
 
-world <- ne_countries(returnclass = "sf")
+world <- ne_countries(returnclass = "sf", scale = small)
 
 # Map of PNA with PINA and PNMS
 
@@ -24,10 +24,10 @@ pnms <- st_read(here("raw_data", "PNA", "PNMS.gpkg")) %>%
 pna_iso3 <- c("FSM", "NRU", "PLW", "KIR", "SLB", "TKL", "MHL", "PNG", "TUV")
 
 eez_subset <- st_read(here::here("raw_data", "PNA", "EEZ_subset.gpkg")) %>% 
-  rmapshaper::ms_simplify(keep_shapes = T) %>%
-  group_by(ISO_Ter1) %>% 
-  summarize(g = 1) %>% 
-  ungroup() %>% 
+  # rmapshaper::ms_simplify(keep_shapes = T) %>%
+  # group_by(ISO_Ter1) %>% 
+  # # summarize(g = 1) %>% 
+  # ungroup() %>% 
   st_make_valid() %>% 
   mutate(id = ifelse(ISO_Ter1 %in% pna_iso3, "PNA", "Other EEZ")) %>% 
   select(id)
@@ -62,14 +62,14 @@ effort <- readRDS(here("raw_data", "PNA", "gridded_effort_by_gear_and_year_dist_
   ungroup()
 
 pna_map <- ggplot() +
-  geom_sf(data = pna_coast, color = "black", size = 0.3) +
+  geom_sf(data = pna_coast, color = "transparent") +
   geom_raster(data = effort, aes(x = lon, y = lat, fill = days)) +
   geom_sf(data = poly, aes(color = id), fill = "transparent", size = 0.3) +
-  scale_color_brewer(palette = "Set1", direction = -1) +
+  scale_color_manual(values = c("black", "steelblue", "red2")) +
   scale_fill_viridis_c() +
   scale_x_continuous(limits = c(130, 210)) +
   startR::ggtheme_map() +
-  labs(color = "Polygon") +
+  labs() +
   guides(fill = guide_colorbar(title = "Fishing days",
                                frame.colour = "black",
                                ticks.colour = "black"),
