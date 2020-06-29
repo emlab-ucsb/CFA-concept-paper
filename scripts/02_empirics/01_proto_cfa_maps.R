@@ -1,6 +1,7 @@
 
 library(here)
 library(rnaturalearth)
+library(cowplot)
 library(sf)
 library(tidyverse)
 
@@ -33,7 +34,7 @@ eez_subset <- st_read(here::here("raw_data", "PNA", "EEZ_subset.gpkg")) %>%
   select(id)
 
 hsp <- tibble(x = c(170, 155, 155, 175, 180, 170),
-              y = c(-10.5, 0, 7, 7, -10.5, -10.5)) %>%
+              y = c(-11.1, 0, 7, 7, -11, -11.1)) %>%
   as.matrix() %>% 
   list() %>%
   st_polygon() %>% 
@@ -44,29 +45,28 @@ hsp <- tibble(x = c(170, 155, 155, 175, 180, 170),
   st_difference(st_union(eez_subset)) %>% 
   st_as_sf() %>% 
   mutate(id = "No Take") %>% 
-  select(id) %>% rename(geom = x)
+  select(id) %>%
+  rename(geom = x)
 
-pna_coast <- st_crop(world, extent(eez_subset)) %>% 
+pna_coast <- st_crop(world, st_bbox(eez_subset)) %>% 
   filter(!sov_a3 == "AU1")
 
 poly <- rbind(pipa, pnms, hsp, eez_subset) %>% 
   mutate(id =fct_relevel(id, c("Other EEZ", "PNA", "No Take")))
 
-effort <- readRDS(here("raw_data", "PNA", "gridded_effort_by_gear_and_year_dist_to_mpa.rds")) %>% 
-  filter(best_vessel_class == "tuna_purse_seines",
-         between(lat, -20, 20),
-         lon < -160 | lon > 100) %>% 
-  mutate(lon = ifelse(lon < 0, lon + 360, lon)) %>%
-  group_by(lon, lat) %>% 
-  summarize(days = mean(fishing_hours) / 24) %>% 
-  ungroup()
+# effort <- readRDS(here("raw_data", "PNA", "gridded_effort_by_gear_and_year_dist_to_mpa.rds")) %>% 
+#   filter(best_vessel_class == "tuna_purse_seines",
+#          between(lat, -20, 20),
+#          lon < -160 | lon > 100) %>% 
+#   mutate(lon = ifelse(lon < 0, lon + 360, lon)) %>%
+#   group_by(lon, lat) %>% 
+#   summarize(days = mean(fishing_hours) / 24) %>% 
+#   ungroup()
 
 pna_map <- ggplot() +
-  geom_sf(data = pna_coast, color = "transparent") +
-  geom_raster(data = effort, aes(x = lon, y = lat, fill = days)) +
-  geom_sf(data = poly, aes(color = id), fill = "transparent", size = 0.3) +
-  scale_color_manual(values = c("black", "steelblue", "red2")) +
-  scale_fill_viridis_c() +
+  geom_sf(data = poly, aes(fill = id), color = "black", size = 0.2) +
+  geom_sf(data = pna_coast, color = "black", size = 0.3) +
+  scale_fill_manual(values = c("transparent", "steelblue", "red2")) +
   scale_x_continuous(limits = c(130, 210)) +
   startR::ggtheme_map() +
   labs() +
@@ -124,7 +124,7 @@ coastline_mx <- st_read(here("raw_data", "mex"), layer = "coastline") %>%
   rmapshaper::ms_simplify(keep_shapes = T)
 
 ph <- ggplot() +
-  geom_sf(data = turf[c(1,3),], fill = "steelblue", alpha = 0.3, color = "black") +
+  geom_sf(data = turf[c(1,3),], fill = "steelblue", color = "black") +
   geom_sf(data = zrp, fill = "red2", color = "red2") +
   geom_sf(data = coastline_mx, color = "black", size = 0.3) +
   lims(x = c(-87.85, -87.25), y = c(19.15, 19.6)) +
@@ -132,9 +132,9 @@ ph <- ggplot() +
 
 # Map for PBC #################################################
 pbc <- ggplot() +
-  geom_sf(data = turf[4,], fill = "steelblue", alpha = 0.5, size = 0.3, color = "black") +
+  geom_sf(data = turf[4,], fill = "steelblue", size = 0.3, color = "black") +
   geom_sf(data = rescom, fill = "red2", color = "red2") +
-  lims(x = c(-115.65, -115.109), y = c(27.7, 28)) +
+  lims(x = c(-115.6, -114), y = c(27.2, 28.4)) +
   geom_sf(data = coastline_mx, color = "black", size = 0.3) +
   startR::ggtheme_map()
 
@@ -148,11 +148,8 @@ pbc_bbox <- (st_bbox(rescom) + c(-4, -3, 4, 3)) %>%
   st_as_sfc() %>% 
   st_sf()
 
-pna_bbox <- #(st_bbox(eez_subset) + c(-360, 0, 0, 0)) %>% 
-  # st_as_sfc()
-  
-  tibble(x = c(145, 145, 180, 180, 145),
-         y = c(-10.5, 7, 7, -10.5, -10.5)) %>%
+pna_bbox <- tibble(x = c(145, 145, 180, 180, 145),
+                   y = c(-10.5, 7, 7, -10.5, -10.5)) %>%
   as.matrix() %>% 
   list() %>%
   st_polygon() %>% 
