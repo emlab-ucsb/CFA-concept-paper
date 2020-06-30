@@ -23,10 +23,9 @@
    |__model_proof.Rmd
 -- Ocean-Halos.Rproj
 -- raw_data
-   |__WGBFAS-CODKAT-1971-2012-CHING.dbf
-   |__WGBFAS-CODKAT-1971-2012-CHING.prj
-   |__WGBFAS-CODKAT-1971-2012-CHING.shp
-   |__WGBFAS-CODKAT-1971-2012-CHING.shx
+   |__cod
+   |__mex
+   |__PNA
 -- README.md
 -- renv
 -- renv.lock
