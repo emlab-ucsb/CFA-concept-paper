@@ -1,4 +1,4 @@
-# Ocean Halos
+# CFA Concept Paper
 
 
 ## Repository structure 
