@@ -115,9 +115,9 @@ optimal_fee_for_L_plot <-
   ggplot(data = best_results,
          mapping = aes(x = L, y = X / K, fill = chi, size = X_rel)) +
   geom_point(color = "black", shape = 21, alpha = 0.8) +
-  geom_vline(data = filter(best_results, X == max(X)),
-             aes(xintercept = L),
-             linetype = "dashed") +
+  #geom_vline(data = filter(best_results, X == max(X)),
+             #aes(xintercept = L),
+             #linetype = "dashed") +
   scale_fill_viridis_c() +
   guides(fill = guide_colorbar(title = bquote("Access fee ("~chi~")"),
                                frame.colour = "black",
@@ -130,6 +130,10 @@ optimal_fee_for_L_plot <-
        y = X_legend)
 
 optimal_fee_for_L_plot
+
+lazy_ggsave(plot = optimal_fee_for_L_plot,
+            filename = "FigureS4",
+            width = 18, height = 11)
 
 
 ### UPDATE GEOM DEFAULTS FOR SUBPLOTS
@@ -362,24 +366,22 @@ L_X_and_dispersal_plot
 ### --------------
 
 
-figS4_subplots <- plot_grid(L_X_and_fines_plot,
-                              L_X_and_enforcement_costs_plot,
-                              L_X_and_fishing_costs_plot,
-                              L_X_and_dispersal_plot,
-                              ncol = 2,
-                              labels = c("B", "C", "D", "E"))
+# figS4_subplots <- plot_grid(L_X_and_fines_plot,
+#                               L_X_and_enforcement_costs_plot,
+#                               L_X_and_fishing_costs_plot,
+#                               L_X_and_dispersal_plot,
+#                               ncol = 2,
+#                               labels = c("B", "C", "D", "E"))
+# 
+# 
+# figS4 <- plot_grid(optimal_fee_for_L_plot,
+#                      figS4_subplots,
+#                      ncol = 1,
+#                    rel_heights = c(0.8,1),
+#                      labels = c("A", NA))
 
 
-figS4 <- plot_grid(optimal_fee_for_L_plot,
-                     figS4_subplots,
-                     ncol = 1,
-                   rel_heights = c(0.8,1),
-                     labels = c("A", NA))
 
-
-lazy_ggsave(plot = figS4,
-            filename = "FigureS4",
-            width = 18, height = 22)
 
 
 

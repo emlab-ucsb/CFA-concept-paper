@@ -1,36 +1,49 @@
-# Repository
+# CFA Concept Paper
 
-Repository for the Ocean-Halos concept paper
 
 ## Repository structure 
 
 ```
 -- data
+   |__clean_world_eez_v11.gpkg
+   |__cod_movement_data.csv
+   |__gridded_distance_from_lsmpa_borders.rds
    |__min_distances_by_eez.csv
    |__SID_country_list.csv
+   |__skagerak_d.rds
+   |__skagerak_s.rds
+   |__skagerak_trawling.rds
+   |__skagerak.gpkg
+   |__tuna_habitat_utilization.csv
    |__WDPA_Nov2019_Marine_Only
    |__WDPA_Nov2019_No_Terrestrial
-   |__World_EEZ_v10_20180221
 -- documents
    |__methods_v2.Rmd
+   |__model_proof.pdf
+   |__model_proof.Rmd
 -- Ocean-Halos.Rproj
+-- raw_data
+   |__cod
+   |__mex
+   |__PNA
 -- README.md
+-- renv
+-- renv.lock
+   |__activate.R
+   |__library
+   |__staging
 -- results
+   |__best_combination_of_L_and_Chi.csv
    |__effort-by-distance-SID
+   |__img
    |__LSMPAs
 -- scripts
-   |__01_model.R
-   |__02_wrapper.R
-   |__03_default_parameters.R
-   |__fishing-by-distance-eez-boundaries.nb.html
-   |__fishing-by-distance-eez-boundaries.Rmd
-   |__fishing-by-distance-mpa-boundaries.nb.html
-   |__fishing-by-distance-mpa-boundaries.Rmd
-   |__ocean_halos_simulation.R
-   |__SIDS-fishing-effort-by-distance.nb.html
-   |__SIDS-fishing-effort-by-distance.Rmd
-   |__spatial-first-differences-test.Rmd
+   |__00_helpers.R
+   |__01_simulations
+   |__02_empirics
+   |__old
 ```
 
 --------- 
 
+<a href="https://orcid.org/0000-0003-1245-589X" target="orcid.widget" rel="noopener noreferrer" style="vertical-align:top;"><img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">orcid.org/0000-0003-1245-589X</a>

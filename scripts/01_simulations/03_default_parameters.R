@@ -17,7 +17,7 @@ D <- matrix(c(0.7, 0.3,
 
 ## Econ
 p <- 1100                 # *Price (USD / ton)
-q <- 2e-5                 # *Catchability (approximated)
+q <- 2e-5                 # *Catchability (approximated) But see (http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.491.7163&rep=rep1&type=pdf)
 c <- 3000                 # *Cost coefficient (USD / unit of effort)
 beta <- 1.3               # *Cost exponent (From upsides Costello et al., 2016)
 

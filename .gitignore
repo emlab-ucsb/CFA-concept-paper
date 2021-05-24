@@ -2,9 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
-
-data/World_EEZ_v10_20180221/eez_v10.*
-data/final_eez_dataset_SID_2016_2018.csv*.httr-oauth
+data/World_EEZ_v10_20180221/*
+data/final_eez_dataset_SID_2016_2018.csv
+*.httr-oauth
 *.Rproj
 *.httr-oauth
 *.DS_Store
+data/gridded_effort_by_gear_and_year_dist_to_mpa.csv
+data/gridded_night_lights_by_year_dist_to_mpa.csv
+data/gridded_distance_from_lsmpa_borders.csv
+*.DS_Store
+*/.DS_Store
+data/ .DS_Store
