@@ -10,6 +10,8 @@ source(here("scripts", "01_simulations", "01_model.R"))
 source(here("scripts", "01_simulations", "02_wrapper.R"))
 source(here("scripts", "01_simulations", "03_default_parameters.R"))
 
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 #### Running simulations #######################################################
 #
 # To run simulations for many combinations of parameters, we use the 
@@ -120,7 +122,7 @@ L_X_and_fines_plot <-
   geom_line() +
   geom_point() +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
+  scale_color_manual(values = cbbPalette,
                      labels = paste0(as.character(w_range_multipliers), "x")) +
   plot_theme() +
   theme(legend.position = "top") +
@@ -167,11 +169,11 @@ L_X_and_enforcement_costs_plot <-
   geom_line() +
   geom_point() +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
+  scale_color_manual(values = cbbPalette,
                      labels = paste0(as.character(alpha_range_multipliers), "x")) +
   plot_theme() +
-  guides(fill = FALSE,
-         size = FALSE,
+  guides(fill = "none",
+         size = "none",
          color = guide_legend(title = bquote("Enforcement costs ("~alpha~")"),
                               title.position = "top",
                               title.hjust = 0.5)) +
@@ -216,11 +218,11 @@ L_X_and_fishing_costs_plot <-
   geom_line() +
   geom_point() +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
+  scale_color_manual(values = cbbPalette,
                      labels = paste0(as.character(c_range_multipliers), "x")) +
   plot_theme() +
-  guides(fill = FALSE,
-         size = FALSE,
+  guides(fill = "none",
+         size = "none",
          color = guide_legend(title = "Fishing costs (c)",
                               title.position = "top",
                               title.hjust = 0.5)) +
@@ -267,11 +269,11 @@ L_X_and_dispersal_plot <-
   geom_line(aes()) +
   geom_point(aes()) +
   scale_fill_viridis_c() +
-  scale_color_brewer(palette = "Set1",
+  scale_color_manual(values = cbbPalette,
                      labels = as.character(self_rec_range)) +
   plot_theme() +
-  guides(fill = FALSE,
-         size = FALSE,
+  guides(fill = "none",
+         size = "none",
          color = guide_legend(title = bquote("Self-recruitment ("~d[`M,M`]~")"),
                               title.position = "top",
                               title.hjust = 0.5)) +
