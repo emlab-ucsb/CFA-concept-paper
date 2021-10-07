@@ -16,6 +16,7 @@ Katherine D. Millage <a href="https://orcid.org/0000-0002-1043-4035" target="orc
    |__model_proof.pdf
    |__model_proof.Rmd
 -- CFA-concept-paper.Rproj
+-- LICENSE
 -- raw_data
    |__cod
    |__mex
