@@ -1,31 +1,22 @@
-# CFA Concept Paper
+# Self-Financed Marine Protected Areas
 
+This repository contains all data and code that support the findings of the paper titled "Self-Financed Marine Protected Areas" currently under consideration by Environmental Research Letters.  
+
+https://zenodo.org/badge/DOI/10.5281/zenodo.5554977.svg
 
 ## Repository structure 
 
 ```
--- data
-   |__clean_world_eez_v11.gpkg
-   |__cod_movement_data.csv
-   |__gridded_distance_from_lsmpa_borders.rds
-   |__min_distances_by_eez.csv
-   |__SID_country_list.csv
-   |__skagerak_d.rds
-   |__skagerak_s.rds
-   |__skagerak_trawling.rds
-   |__skagerak.gpkg
-   |__tuna_habitat_utilization.csv
-   |__WDPA_Nov2019_Marine_Only
-   |__WDPA_Nov2019_No_Terrestrial
 -- documents
    |__methods_v2.Rmd
    |__model_proof.pdf
    |__model_proof.Rmd
--- Ocean-Halos.Rproj
+-- CFA-concept-paper.Rproj
 -- raw_data
    |__cod
    |__mex
    |__PNA
+   -- old-analyses
 -- README.md
 -- renv
 -- renv.lock
@@ -34,14 +25,12 @@
    |__staging
 -- results
    |__best_combination_of_L_and_Chi.csv
-   |__effort-by-distance-SID
-   |__img
-   |__LSMPAs
+   -- img
 -- scripts
    |__00_helpers.R
    |__01_simulations
    |__02_empirics
-   |__old
+   -- old-analyses
 ```
 
 --------- 
