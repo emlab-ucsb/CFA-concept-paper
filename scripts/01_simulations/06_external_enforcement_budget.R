@@ -104,7 +104,7 @@ biomass_heatmap <-
 biomass_heatmap
 
 lazy_ggsave(plot = biomass_heatmap,
-            filename = "FigureS1",
+            filename = "figure_3",
             width = 18, height = 11)
 # 
 # ### --------------------------------------------------------------------

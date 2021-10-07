@@ -132,7 +132,7 @@ optimal_fee_for_L_plot <-
 optimal_fee_for_L_plot
 
 lazy_ggsave(plot = optimal_fee_for_L_plot,
-            filename = "FigureS4",
+            filename = "figure_s3",
             width = 18, height = 11)
 
 

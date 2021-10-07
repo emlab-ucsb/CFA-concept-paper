@@ -176,7 +176,7 @@ final_plot <- plot_grid(w_plot, pbc, pna_map, ph,
                         labels = c("A", "C", "B", "D"))
 
 lazy_ggsave(plot = final_plot,
-            filename = "proto_cfa_map",
+            filename = "figure_4",
             width = 22,
             height = 12.5)
 

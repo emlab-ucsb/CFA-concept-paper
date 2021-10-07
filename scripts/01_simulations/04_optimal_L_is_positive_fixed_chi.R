@@ -305,7 +305,7 @@ fig2 <- plot_grid(optimal_fee_for_L_plot,
 
 
 lazy_ggsave(plot = fig2,
-            filename = "Figure2",
+            filename = "figure_2",
             width = 18, height = 22)
 
 

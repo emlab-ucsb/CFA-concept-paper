@@ -304,7 +304,7 @@ plot_with_legend <- plot_grid(main_plot,
 plot_with_legend
 
 lazy_ggsave(plot = plot_with_legend,
-            filename = "FigureS2",
+            filename = "figure_s1",
             width = 18,
             height = 22)
 
